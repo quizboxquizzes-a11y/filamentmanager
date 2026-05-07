@@ -79,9 +79,10 @@
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
 
-        .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); display: inline-block; }
-        .dot-row { display: flex; gap: 4px; }
-        .mini-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
+        /* Improved dot visibility with a border/ring */
+        .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
+        .dot-row { display: flex; gap: 6px; }
+        .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
@@ -169,11 +170,11 @@
     ];
 
     const filamentColors = {
-        "Black": "#111", "White": "#F9F9F9", "Gray": "#888", "Silver": "#C0C0C0", "Bronze": "#CD7F32", "Gold": "#D4AF37",
-        "Green": "#228B22", "Red": "#B22222", "Blue": "#00008B", "Yellow": "#FFD700", "Orange": "#FF8C00", "Cyan": "#00FFFF",
-        "Magenta": "#FF00FF", "Charcoal": "#333", "Ash": "#A9A9A9", "Terracotta": "#E2725B", "Tan": "#D2B48C",
-        "Apple": "#8DB600", "Ivory": "#FFFFF0", "Bone": "#E3DAC9", "Brown": "#5D4037", "Chocolate": "#3E2723",
-        "Grass": "#7CFC00", "Mandarin": "#F28500", "Ice": "#99FFFF", "Lilac": "#C8A2C8", "Sakura": "#FFC0CB", "Jungle": "#29AB87", "Stone": "#59788E"
+        "Black": "#0a0a0a", "White": "#ffffff", "Gray": "#808080", "Silver": "#c0c0c0", "Bronze": "#cd7f32", "Gold": "#ffd700",
+        "Green": "#008000", "Red": "#ff0000", "Blue": "#0000ff", "Yellow": "#ffff00", "Orange": "#ffa500", "Cyan": "#00ffff",
+        "Magenta": "#ff00ff", "Charcoal": "#2b2b2b", "Ash": "#b2b2b2", "Terracotta": "#e2725b", "Tan": "#d2b48c",
+        "Apple": "#8db600", "Ivory": "#fffff0", "Bone": "#e3dac9", "Brown": "#5d4037", "Chocolate": "#3e2723",
+        "Grass": "#7cfc00", "Mandarin": "#f28500", "Ice": "#99ffff", "Lilac": "#c8a2c8", "Sakura": "#ffc0cb", "Jungle": "#29ab87", "Stone": "#59788e"
     };
 
     let tempProj = [];
@@ -250,7 +251,7 @@
             const dotsHtml = proj.fils.map(f => {
                 const color = getFilamentColor(f.f);
                 const hasIt = stock[f.f] && stock[f.f].current >= f.g;
-                return `<div class="mini-dot" style="background: ${hasIt ? color : 'transparent'}; border-color: ${color}; opacity: ${hasIt ? 1 : 0.4}"></div>`;
+                return `<div class="mini-dot" style="background: ${hasIt ? color : 'transparent'}; border-color: ${color}; opacity: 1;"></div>`;
             }).join('');
 
             return `
@@ -346,11 +347,7 @@
         document.getElementById('result-box').innerHTML = html;
         forceCloseResults();
         
-        // AUTO-SCROLL LOGIC: Glides smoothly to the checker section
-        document.getElementById('checker-section').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
+        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function deleteCustomProject(id) {
