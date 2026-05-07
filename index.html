@@ -140,6 +140,7 @@
         "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Ivory White (11100)", 
         "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Dark Chocolate (11802)",
         "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)", "Bambu PLA Matte Yellow (10400)",
+        "Bambu PLA Matte Ice Blue", "Bambu PLA Matte Lilac Purple", "Bambu PLA Matte Sakura Pink", 
         "Polymaker PLA Jungle Green", "Polymaker PLA Stone Blue"
     ];
 
@@ -169,7 +170,7 @@
         const res = document.getElementById(resultsId);
         
         res.style.display = 'block';
-        const filtered = filaments.filter(f => f.toLowerCase().includes(q)).slice(0,10);
+        const filtered = filaments.filter(f => f.toLowerCase().includes(q)).slice(0,12);
         
         res.innerHTML = filtered.map(f => `
             <div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
