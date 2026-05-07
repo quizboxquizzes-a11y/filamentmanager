@@ -65,7 +65,6 @@
         .tag { padding: 10px; margin: 5px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between;}
         .tag.missing { border-color: var(--danger); color: var(--danger); }
 
-        /* Available Projects Styling */
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; }
         .avail-item:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -164,7 +163,6 @@
 
     let tempProj = [];
 
-    // --- Core UI Functions ---
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
         logo.classList.remove('animate-spin');
@@ -190,7 +188,7 @@
         }
     }
 
-    // --- Available Projects Logic ---
+    // --- Available Projects Logic (Updated with Prefix) ---
     function updateAvailableProjects() {
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         const customProjs = JSON.parse(localStorage.getItem('customProjs') || "[]");
@@ -203,7 +201,14 @@
             const reqs = playbookProjects[key];
             const stats = checkFeasibility(reqs, stock);
             if (stats.hasAny) {
-                available.push({ name: key.replace(/_/g, ' '), val: "p:"+key, ...stats });
+                // Formatting name to include "Playbook'd:"
+                const displayName = "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                available.push({ 
+                    name: displayName, 
+                    val: "p:"+key, 
+                    realName: key.replace(/_/g, ' '),
+                    ...stats 
+                });
             }
         });
 
@@ -211,16 +216,15 @@
         customProjs.forEach(proj => {
             const stats = checkFeasibility(proj.fils, stock);
             if (stats.hasAny) {
-                available.push({ name: proj.name, val: "c:"+proj.id, ...stats });
+                available.push({ name: proj.name, val: "c:"+proj.id, realName: proj.name, ...stats });
             }
         });
 
         if (available.length === 0) {
-            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">No projects currently matches your stock.</div>`;
+            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">No projects currently match your stock.</div>`;
             return;
         }
 
-        // Sort: Ready to print first
         available.sort((a, b) => b.isReady - a.isReady);
 
         listDiv.innerHTML = available.map(proj => `
@@ -241,12 +245,7 @@
                 isReady = false;
             }
         });
-        return {
-            hasAny: matchCount > 0,
-            isReady: isReady,
-            matchCount: matchCount,
-            totalCount: reqs.length
-        };
+        return { hasAny: matchCount > 0, isReady: isReady, matchCount: matchCount, totalCount: reqs.length };
     }
 
     // --- Search & Filtering ---
@@ -272,8 +271,12 @@
         res.style.display = 'block';
         
         let matches = [];
-        Object.keys(playbookProjects).forEach(k => { if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); });
-        JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); });
+        Object.keys(playbookProjects).forEach(k => { 
+            if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); 
+        });
+        JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { 
+            if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); 
+        });
         
         let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
         html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
