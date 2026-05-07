@@ -24,7 +24,7 @@
         .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
         #logo-svg { width: 48px; height: 48px; overflow: visible; }
         
-        /* Spool Spin Animation - Set to run once per trigger */
+        /* Spool Spin Animation */
         .animate-spin { 
             animation: spoolSpin 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); 
             transform-origin: center;
@@ -146,18 +146,17 @@
 
     let tempProj = [];
 
-    // Trigger Logo Animation with "Reset" trick
+    // FIXED: RELIABLE THEME ANIMATION
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
         
-        // Remove class first
+        // Remove class to reset
         logo.classList.remove('animate-spin');
         
-        // Trigger a reflow - THIS is the fix for "only works once"
-        void logo.offsetWidth; 
-        
-        // Re-add class
-        logo.classList.add('animate-spin');
+        // Force the browser to restart the animation using a tiny timeout
+        setTimeout(() => {
+            logo.classList.add('animate-spin');
+        }, 10); 
     }
 
     function toggleTheme() { 
