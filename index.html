@@ -35,7 +35,6 @@
         .weight-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
         .weight-btn { padding: 10px; font-size: 11px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        .btn-ui { width: 100%; background: transparent; color: var(--accent); padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 800; border: 2px solid var(--accent); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; margin-top: 10px; }
         .btn-print { width: 100%; background: var(--accent); color: #000; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
         
@@ -80,7 +79,7 @@
 
 <div class="section" id="checker-section">
     <h2>Project Checker</h2>
-    <input id="projSearchCheck" placeholder="Search projects..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
+    <input id="projSearchCheck" placeholder="Search Playbook'd Series..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
     <div id="results-proj" class="search-results"></div>
     <div id="result-box"></div>
 </div>
@@ -90,25 +89,32 @@
         backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
         cribbage: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 285.5 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 182.4 }, { f: "Bambu PLA Matte Dark Red", g: 29.12 }],
         hangman: [{ f: "Bambu PLA Matte Charcoal (11101)", g: 410 }, { f: "Bambu PLA Matte Desert Tan", g: 240.5 }, { f: "Bambu PLA Matte Bone White", g: 88.03 }],
+        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
         sea_battle: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }],
-        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }]
+        mancala: [{ f: "Bambu PLA Matte Terracotta", g: 280 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 90 }, { f: "Bambu PLA Matte Bone White", g: 75 }],
+        crosswords: [{ f: "Bambu PLA Matte Dark Chocolate (11802)", g: 240 }, { f: "Bambu PLA Matte Desert Tan", g: 110 }, { f: "Bambu PLA Matte Bone White", g: 80 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 40 }],
+        four_in_a_row: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 210 }, { f: "Bambu PLA Matte Dark Red", g: 145 }, { f: "Bambu PLA Matte Yellow (10400)", g: 145 }],
+        checkers: [{ f: "Bambu PLA Matte Charcoal (11101)", g: 240 }, { f: "Bambu PLA Matte Bone White", g: 240 }, { f: "Bambu PLA Matte Dark Red", g: 50 }],
+        reversi: [{ f: "Bambu PLA Matte Apple Green (11502)", g: 260 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 120 }, { f: "Bambu PLA Matte Bone White", g: 120 }],
+        snakes_and_ladders: [{ f: "Bambu PLA Matte Grass Green", g: 290 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 160 }, { f: "Bambu PLA Matte Mandarin Orange (11300)", g: 40 }],
+        settlers_storage: [{ f: "Bambu PLA Matte Terracotta", g: 380 }, { f: "Bambu PLA Matte Bone White", g: 110 }],
+        sling_puck: [{ f: "Bambu PLA Matte Dark Green (11501)", g: 310 }, { f: "Bambu PLA Matte Bone White", g: 90 }],
+        shut_the_box: [{ f: "Bambu PLA Matte Terracotta", g: 275 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 115 }, { f: "Bambu PLA Matte Bone White", g: 30 }],
+        hook_and_ring: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 240 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 120 }, { f: "Bambu PLA Matte Dark Red", g: 40 }]
     };
 
-    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan"];
-    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#0000ff", "Red": "#ff0000", "Brown": "#5d4037", "Ivory": "#fffff0", "Ash": "#b2b2b2", "Tan": "#d2b48c" };
+    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Terracotta", "Bambu PLA Matte Dark Chocolate (11802)", "Bambu PLA Matte Yellow (10400)", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)"];
+    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#0000ff", "Red": "#ff0000", "Brown": "#5d4037", "Ivory": "#fffff0", "Ash": "#b2b2b2", "Tan": "#d2b48c", "Terracotta": "#e2725b", "Chocolate": "#3e2723", "Yellow": "#ffd700", "Apple": "#8db600", "Grass": "#7cfc00", "Mandarin": "#f28500" };
 
     function getFilamentColor(name) {
         for(const [key, val] of Object.entries(filamentColors)) { if(name.includes(key)) return val; }
         return "#888";
     }
 
-    // Helper to sum all spools of a specific filament type
     function getCombinedStock() {
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const totals = {};
-        spools.forEach(s => {
-            totals[s.name] = (totals[s.name] || 0) + s.current;
-        });
+        spools.forEach(s => { totals[s.name] = (totals[s.name] || 0) + s.current; });
         return totals;
     }
 
@@ -116,30 +122,23 @@
         const totals = getCombinedStock();
         const readyDiv = document.getElementById('readyList');
         const almostDiv = document.getElementById('almostList');
-        
-        let readyArr = [];
-        let almostArr = [];
+        let readyArr = []; let almostArr = [];
 
         Object.keys(playbookProjects).forEach(key => {
             const reqs = playbookProjects[key];
-            let matchCount = 0;
-            let isReady = true;
-            
+            let matchCount = 0; let isReady = true;
             reqs.forEach(req => {
-                const totalInStock = totals[req.f] || 0;
-                if (totalInStock >= req.g) matchCount++; else isReady = false;
+                if ((totals[req.f] || 0) >= req.g) matchCount++; else isReady = false;
             });
-
             const percentage = (matchCount / reqs.length) * 100;
-            const data = { name: key.replace(/_/g, ' '), val: "p:"+key, fils: reqs, matchCount, totalCount: reqs.length, isReady, percentage };
-            
-            if(isReady) readyArr.push(data);
-            else if(percentage >= 70) almostArr.push(data);
+            const displayName = "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const data = { name: displayName, val: "p:"+key, fils: reqs, matchCount, totalCount: reqs.length, isReady, percentage };
+            if(isReady) readyArr.push(data); else if(percentage >= 70) almostArr.push(data);
         });
 
         const renderItem = (p, type) => `
-            <div class="avail-item ${type}" onclick="checkProject('${p.val}', '${p.name}')">
-                <b>${p.name.toUpperCase()}</b>
+            <div class="avail-item ${type}" onclick="checkProject('${p.val}', '${p.name.replace(/'/g, "\\'")}')">
+                <b>${p.name}</b>
                 <div style="display:flex; justify-content: space-between; align-items:center; gap:10px;">
                     <small style="opacity:0.6">${p.matchCount}/${p.totalCount}</small>
                     <div style="display:flex; gap:4px;">${p.fils.map(f => `<div class="mini-dot" style="background:${(totals[f.f] >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div>
@@ -154,36 +153,28 @@
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         spools.push({ id: Date.now(), name: name, current: 1000, max: 1000 });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock();
-        updateAvailableProjects();
-        forceCloseResults();
+        renderStock(); updateAvailableProjects(); forceCloseResults();
     }
 
     function adjustWeight(id, amount) {
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const idx = spools.findIndex(s => s.id === id);
         if (idx !== -1) {
-            if (amount === -9999) {
-                spools.splice(idx, 1);
-            } else {
-                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
-            }
+            if (amount === -9999) spools.splice(idx, 1);
+            else spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
         }
         localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock();
-        updateAvailableProjects();
+        renderStock(); updateAvailableProjects();
     }
 
     function renderStock() {
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const container = document.getElementById('ownedList');
-        // Sort by name so multi-spools appear together
         spools.sort((a,b) => a.name.localeCompare(b.name));
-        
         container.innerHTML = spools.map(s => `
             <div class="stock-item">
                 <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
-                <div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden; white-space:nowrap;">${s.name}</div>
+                <div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div>
                 <div class="weight-display">${s.current}g</div>
                 <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -207,7 +198,10 @@
         const q = document.getElementById('projSearchCheck').value.toLowerCase();
         const res = document.getElementById('results-proj');
         res.style.display = 'block';
-        res.innerHTML = Object.keys(playbookProjects).filter(k => k.includes(q)).map(k => `<div class="search-item" onmousedown="checkProject('p:${k}', '${k}')">${k}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+        res.innerHTML = Object.keys(playbookProjects).filter(k => k.includes(q)).map(k => {
+            const displayName = "Playbook'd: " + k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `<div class="search-item" onmousedown="checkProject('p:${k}', '${displayName.replace(/'/g, "\\'")}')">${displayName}</div>`;
+        }).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
     }
 
     function checkProject(val, name) {
@@ -215,15 +209,13 @@
         const reqs = playbookProjects[id];
         const totals = getCombinedStock();
         let canPrint = true;
-        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name.toUpperCase()}</h3>`;
-        
+        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name}</h3>`;
         reqs.forEach(item => {
             const totalInStock = totals[item.f] || 0;
             if(totalInStock < item.g) canPrint = false;
             html += `<div class="tag ${totalInStock < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${totalInStock}g total / ${item.g}g needed</div>`;
         });
-        
-        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print (Deduct from Spools)</button>`;
+        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print (Deduct Stock)</button>`;
         document.getElementById('result-box').innerHTML = html + `</div>`;
         forceCloseResults();
         document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
@@ -232,44 +224,25 @@
     function commitPrint(projId) {
         if(!confirm("Subtract weights from spools?")) return;
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        const reqs = playbookProjects[projId];
-
-        reqs.forEach(req => {
+        playbookProjects[projId].forEach(req => {
             let needed = req.g;
-            // Find all physical spools of this type and sort by current weight (ascending) 
-            // This way we empty the "scrap" spools first.
             let relevantSpools = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
-            
             relevantSpools.forEach(rs => {
                 if (needed <= 0) return;
                 const spoolToUpdate = spools.find(s => s.id === rs.id);
-                if (spoolToUpdate.current >= needed) {
-                    spoolToUpdate.current = parseFloat((spoolToUpdate.current - needed).toFixed(2));
-                    needed = 0;
-                } else {
-                    needed -= spoolToUpdate.current;
-                    spoolToUpdate.current = 0;
-                }
+                if (spoolToUpdate.current >= needed) { spoolToUpdate.current = parseFloat((spoolToUpdate.current - needed).toFixed(2)); needed = 0; }
+                else { needed -= spoolToUpdate.current; spoolToUpdate.current = 0; }
             });
         });
-
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
-        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Stock Deducted! Scraps emptied first.</div>";
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Print logged! Scraps used first.</div>";
     }
 
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
     function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
 
-    // On Load: Convert old single-stock system to multi-spool if necessary
-    if(localStorage.getItem('stock') && !localStorage.getItem('multiSpools')) {
-        const oldStock = JSON.parse(localStorage.getItem('stock'));
-        const newStock = Object.keys(oldStock).map((name, i) => ({ id: i, name, current: oldStock[name].current, max: 1000 }));
-        localStorage.setItem('multiSpools', JSON.stringify(newStock));
-    }
-
-    renderStock();
-    updateAvailableProjects();
+    renderStock(); updateAvailableProjects();
 </script>
 </body>
 </html>
