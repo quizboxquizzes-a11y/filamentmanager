@@ -78,6 +78,9 @@
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
+
+        /* Added for the color dot */
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); display: inline-block; }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
@@ -163,6 +166,15 @@
         "Bambu PLA Matte Ice Blue", "Bambu PLA Matte Lilac Purple", "Bambu PLA Matte Sakura Pink", 
         "Polymaker PLA Jungle Green", "Polymaker PLA Stone Blue"
     ];
+
+    /* Color mapping for small dots */
+    const filamentColors = {
+        "Black": "#111", "White": "#F9F9F9", "Gray": "#888", "Silver": "#C0C0C0", "Bronze": "#CD7F32", "Gold": "#D4AF37",
+        "Green": "#228B22", "Red": "#B22222", "Blue": "#00008B", "Yellow": "#FFD700", "Orange": "#FF8C00", "Cyan": "#00FFFF",
+        "Magenta": "#FF00FF", "Charcoal": "#333", "Ash": "#A9A9A9", "Terracotta": "#E2725B", "Tan": "#D2B48C",
+        "Apple": "#8DB600", "Ivory": "#FFFFF0", "Bone": "#E3DAC9", "Brown": "#5D4037", "Chocolate": "#3E2723",
+        "Grass": "#7CFC00", "Mandarin": "#F28500", "Ice": "#99FFFF", "Lilac": "#C8A2C8", "Sakura": "#FFC0CB", "Jungle": "#29AB87", "Stone": "#59788E"
+    };
 
     let tempProj = [];
 
@@ -364,15 +376,25 @@
         container.innerHTML = "";
         Object.keys(s).forEach(f => {
             const data = s[f];
+            
+            // Logic to find color for dot
+            let detectedColor = "#888"; 
+            for(const [key, val] of Object.entries(filamentColors)) {
+                if(f.includes(key)) { detectedColor = val; break; }
+            }
+
             container.innerHTML += `
                 <div class="stock-item">
                     <button class="delete-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -9999)">×</button>
                     <div style="font-size:12px; font-weight:700; opacity:0.8;">${f}</div>
                     <div class="weight-display">${data.current}g</div>
                     <div class="progress-container"><div class="progress-bar" style="width:${(data.current/data.max)*100}%"></div></div>
-                    <div class="weight-controls">
-                        <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -50)">-50g</button>
-                        <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', 100)">+100g</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                         <div class="color-dot" style="background:${detectedColor}"></div>
+                         <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
+                            <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -50)">-50g</button>
+                            <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', 100)">+100g</button>
+                        </div>
                     </div>
                 </div>`;
         });
