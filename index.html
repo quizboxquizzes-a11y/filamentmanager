@@ -10,47 +10,33 @@
             --bg: #1A1A1A; --card: #232323; --border: #2E2E2E; --text: #EAEAEA;
             --accent: #00FF7F; --danger: #FF4C4C; --warning: #FFD700; --shadow: 0 4px 14px rgba(0,0,0,0.35);
         }
-        :root.light {
-            --bg: #FFFFFF; --card: #F7F7F7; --border: #DDDDDD; --text: #111;
-            --accent: #00B368; --danger: #E53935; --warning: #F9A825; --shadow: 0 4px 14px rgba(0,0,0,0.12);
-        }
-
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
-        
         .header { display: flex; justify-content: flex-start; align-items: center; padding: 30px 0; max-width: 1100px; margin: 0 auto; }
-        .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-        
         .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; max-width: 1100px; margin: 20px auto; box-shadow: var(--shadow); position: relative; }
         h2 { margin-top: 0; font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
-        input { width: 100%; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
-
+        input, select { width: 100%; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
         .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 15px; }
         @media (max-width: 900px) { .inventory-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
-
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; }
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
         .weight-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
         .weight-btn { padding: 10px; font-size: 11px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: bold; }
-
         .btn-print { width: 100%; background: var(--accent); color: #000; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
+        .btn-add { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
-        
         .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
-
         .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; flex-direction: column; gap: 4px;}
         .tag.missing { border-left: 4px solid var(--danger); }
         .tag.ready { border-left: 4px solid var(--accent); }
-
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 6px; }
         .avail-item.ready { border: 1px solid var(--accent); background: rgba(0, 255, 127, 0.05); }
         .avail-item.almost { border: 1px solid var(--warning); background: rgba(255, 215, 0, 0.05); }
-
         .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; }
         .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); }
     </style>
@@ -58,9 +44,7 @@
 <body onclick="closeAllResults(event)">
 
 <div class="header">
-    <div class="logo-container">
-        <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
-    </div>
+    <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
 </div>
 
 <div class="section">
@@ -71,15 +55,28 @@
 </div>
 
 <div class="section">
-    <h2>Inventory Manager (Multi-Spool)</h2>
-    <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch('main')" oninput="updateSearch('main')">
+    <h2>Inventory Manager</h2>
+    <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
     <div id="results-main" class="search-results"></div>
     <div id="ownedList" class="inventory-grid"></div>
 </div>
 
+<div class="section">
+    <h2>Create Custom Project</h2>
+    <input id="customProjName" placeholder="Project Name (e.g. My Cool Statue)">
+    <div id="customInputs">
+        <div style="display:flex; gap:10px;">
+            <select class="custom-fil-select"></select>
+            <input type="number" class="custom-fil-grams" placeholder="Grams">
+        </div>
+    </div>
+    <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
+    <button class="btn-print" onclick="saveCustomProject()">Save Project</button>
+</div>
+
 <div class="section" id="checker-section">
     <h2>Project Checker</h2>
-    <input id="projSearchCheck" placeholder="Search Playbook'd Series..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
+    <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
     <div id="results-proj" class="search-results"></div>
     <div id="result-box"></div>
 </div>
@@ -118,40 +115,59 @@
         return totals;
     }
 
+    function getAllProjects() {
+        const custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+        return {...playbookProjects, ...custom};
+    }
+
     function updateAvailableProjects() {
         const totals = getCombinedStock();
+        const all = getAllProjects();
         const readyDiv = document.getElementById('readyList');
         const almostDiv = document.getElementById('almostList');
         let readyArr = []; let almostArr = [];
 
-        Object.keys(playbookProjects).forEach(key => {
-            const reqs = playbookProjects[key];
+        Object.keys(all).forEach(key => {
+            const reqs = all[key];
             let matchCount = 0; let isReady = true;
-            reqs.forEach(req => {
-                if ((totals[req.f] || 0) >= req.g) matchCount++; else isReady = false;
-            });
+            reqs.forEach(req => { if ((totals[req.f] || 0) >= req.g) matchCount++; else isReady = false; });
             const percentage = (matchCount / reqs.length) * 100;
-            const displayName = "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const displayName = playbookProjects[key] ? "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : key;
             const data = { name: displayName, val: "p:"+key, fils: reqs, matchCount, totalCount: reqs.length, isReady, percentage };
             if(isReady) readyArr.push(data); else if(percentage >= 70) almostArr.push(data);
         });
 
-        const renderItem = (p, type) => `
-            <div class="avail-item ${type}" onclick="checkProject('${p.val}', '${p.name.replace(/'/g, "\\'")}')">
-                <b>${p.name}</b>
-                <div style="display:flex; justify-content: space-between; align-items:center; gap:10px;">
-                    <small style="opacity:0.6">${p.matchCount}/${p.totalCount}</small>
-                    <div style="display:flex; gap:4px;">${p.fils.map(f => `<div class="mini-dot" style="background:${(totals[f.f] >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div>
-                </div>
-            </div>`;
-
+        const renderItem = (p, type) => `<div class="avail-item ${type}" onclick="checkProject('${p.val}', '${p.name.replace(/'/g, "\\'")}')"><b>${p.name}</b><div style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><small style="opacity:0.6">${p.matchCount}/${p.totalCount}</small><div style="display:flex; gap:4px;">${p.fils.map(f => `<div class="mini-dot" style="background:${(totals[f.f] >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div></div></div>`;
         readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small style='opacity:0.5'>None ready.</small>";
         almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>None near completion.</small>";
     }
 
+    function addCustomInput() {
+        const container = document.getElementById('customInputs');
+        const div = document.createElement('div');
+        div.style.display = 'flex'; div.style.gap = '10px';
+        div.innerHTML = `<select class="custom-fil-select">${filamentsList.map(f => `<option value="${f}">${f}</option>`).join('')}</select><input type="number" class="custom-fil-grams" placeholder="Grams">`;
+        container.appendChild(div);
+    }
+
+    function saveCustomProject() {
+        const name = document.getElementById('customProjName').value.trim();
+        if(!name) return alert("Enter project name");
+        const selects = document.querySelectorAll('.custom-fil-select');
+        const grams = document.querySelectorAll('.custom-fil-grams');
+        let reqs = [];
+        selects.forEach((s, i) => { if(grams[i].value > 0) reqs.push({ f: s.value, g: parseFloat(grams[i].value) }); });
+        if(reqs.length === 0) return alert("Add at least one filament requirement");
+        let custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+        custom[name] = reqs;
+        localStorage.setItem('customProjects', JSON.stringify(custom));
+        alert("Custom Project Saved!");
+        location.reload();
+    }
+
     function addNewSpool(name) {
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        spools.push({ id: Date.now(), name: name, current: 1000, max: 1000 });
+        spools.push({ id: Date.now(), name, current: 1000, max: 1000 });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects(); forceCloseResults();
     }
@@ -171,67 +187,49 @@
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const container = document.getElementById('ownedList');
         spools.sort((a,b) => a.name.localeCompare(b.name));
-        container.innerHTML = spools.map(s => `
-            <div class="stock-item">
-                <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
-                <div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div>
-                <div class="weight-display">${s.current}g</div>
-                <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="color-dot" style="background:${getFilamentColor(s.name)}"></div>
-                    <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
-                        <button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button>
-                        <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
-                    </div>
-                </div>
-            </div>`).join('');
+        container.innerHTML = spools.map(s => `<div class="stock-item"><button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button><div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div><div class="weight-display">${s.current}g</div><div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div><div style="display:flex; justify-content:space-between; align-items:center;"><div class="color-dot" style="background:${getFilamentColor(s.name)}"></div><div class="weight-controls" style="flex-grow:1; margin-left:10px;"><button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button><button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button></div></div></div>`).join('');
     }
 
-    function updateSearch(type) {
+    function updateSearch() {
         const q = document.getElementById('filamentSearchMain').value.toLowerCase();
-        const res = document.getElementById('results-main');
-        res.style.display = 'block';
+        const res = document.getElementById('results-main'); res.style.display = 'block';
         res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f.replace(/'/g, "\\'")}')">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
     }
 
     function updateProjSearch() {
         const q = document.getElementById('projSearchCheck').value.toLowerCase();
-        const res = document.getElementById('results-proj');
-        res.style.display = 'block';
-        res.innerHTML = Object.keys(playbookProjects).filter(k => k.includes(q)).map(k => {
-            const displayName = "Playbook'd: " + k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            return `<div class="search-item" onmousedown="checkProject('p:${k}', '${displayName.replace(/'/g, "\\'")}')">${displayName}</div>`;
+        const res = document.getElementById('results-proj'); res.style.display = 'block';
+        const all = getAllProjects();
+        res.innerHTML = Object.keys(all).filter(k => k.toLowerCase().includes(q)).map(k => {
+            const disp = playbookProjects[k] ? "Playbook'd: " + k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : k;
+            return `<div class="search-item" onmousedown="checkProject('p:${k}', '${disp.replace(/'/g, "\\'")}')">${disp}</div>`;
         }).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
     }
 
     function checkProject(val, name) {
-        const id = val.split(':')[1];
-        const reqs = playbookProjects[id];
-        const totals = getCombinedStock();
-        let canPrint = true;
+        const id = val.split(':')[1]; const reqs = getAllProjects()[id]; const totals = getCombinedStock(); let canPrint = true;
         let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name}</h3>`;
         reqs.forEach(item => {
-            const totalInStock = totals[item.f] || 0;
-            if(totalInStock < item.g) canPrint = false;
-            html += `<div class="tag ${totalInStock < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${totalInStock}g total / ${item.g}g needed</div>`;
+            const total = totals[item.f] || 0; if(total < item.g) canPrint = false;
+            html += `<div class="tag ${total < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${total}g / ${item.g}g</div>`;
         });
-        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print (Deduct Stock)</button>`;
+        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print</button>`;
         document.getElementById('result-box').innerHTML = html + `</div>`;
-        forceCloseResults();
-        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
+        forceCloseResults(); document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
     }
 
     function commitPrint(projId) {
-        if(!confirm("Subtract weights from spools?")) return;
+        if(!confirm("Deduct stock?")) return;
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        playbookProjects[projId].forEach(req => {
+        const reqs = getAllProjects()[projId];
+        reqs.forEach(req => {
             let needed = req.g;
-            let relevantSpools = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
-            relevantSpools.forEach(rs => {
+            let rel = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
+            rel.forEach(rs => {
                 if (needed <= 0) return;
-                const spoolToUpdate = spools.find(s => s.id === rs.id);
-                if (spoolToUpdate.current >= needed) { spoolToUpdate.current = parseFloat((spoolToUpdate.current - needed).toFixed(2)); needed = 0; }
-                else { needed -= spoolToUpdate.current; spoolToUpdate.current = 0; }
+                const sUpdate = spools.find(s => s.id === rs.id);
+                if (sUpdate.current >= needed) { sUpdate.current = parseFloat((sUpdate.current - needed).toFixed(2)); needed = 0; }
+                else { needed -= sUpdate.current; sUpdate.current = 0; }
             });
         });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
@@ -242,6 +240,7 @@
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
     function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
 
+    document.querySelectorAll('.custom-fil-select').forEach(s => s.innerHTML = filamentsList.map(f => `<option value="${f}">${f}</option>`).join(''));
     renderStock(); updateAvailableProjects();
 </script>
 </body>
