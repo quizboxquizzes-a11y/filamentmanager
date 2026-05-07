@@ -61,6 +61,13 @@
     <div id="ownedList" class="inventory-grid"></div>
 </div>
 
+<div class="section" id="checker-section">
+    <h2>Project Checker</h2>
+    <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
+    <div id="results-proj" class="search-results"></div>
+    <div id="result-box"></div>
+</div>
+
 <div class="section">
     <h2>Create Custom Project</h2>
     <input id="customProjName" placeholder="Project Name (e.g. My Cool Statue)">
@@ -72,13 +79,6 @@
     </div>
     <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
     <button class="btn-print" onclick="saveCustomProject()">Save Project</button>
-</div>
-
-<div class="section" id="checker-section">
-    <h2>Project Checker</h2>
-    <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
-    <div id="results-proj" class="search-results"></div>
-    <div id="result-box"></div>
 </div>
 
 <script>
