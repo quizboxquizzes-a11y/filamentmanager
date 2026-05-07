@@ -65,6 +65,13 @@
         .tag { padding: 10px; margin: 5px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between;}
         .tag.missing { border-color: var(--danger); color: var(--danger); }
 
+        /* Available Projects Styling */
+        .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .avail-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .avail-item.ready { border: 1px solid var(--accent); background: rgba(0, 255, 127, 0.05); }
+        .avail-item.ready::before { content: "✅ "; }
+
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
@@ -86,6 +93,13 @@
             <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="276" stroke-dashoffset="60" />
         </svg>
         <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Projects Available</h2>
+    <div id="availableProjectsList" class="avail-list">
+        <div style="opacity: 0.5; font-size: 13px;">Add filaments to your inventory to see what you can print...</div>
     </div>
 </div>
 
@@ -162,7 +176,6 @@
         triggerLogoAnimation(); 
     }
 
-    // NEW: Handle ESC key to close results
     document.addEventListener('keydown', (e) => {
         if (e.key === "Escape") forceCloseResults();
     });
@@ -172,10 +185,68 @@
     }
 
     function closeAllResults(e) {
-        // Only close if we didn't click an input or the results box itself
         if (!e.target.closest('input') && !e.target.closest('.search-results')) {
             forceCloseResults();
         }
+    }
+
+    // --- Available Projects Logic ---
+    function updateAvailableProjects() {
+        const stock = JSON.parse(localStorage.getItem('stock') || "{}");
+        const customProjs = JSON.parse(localStorage.getItem('customProjs') || "[]");
+        const listDiv = document.getElementById('availableProjectsList');
+        
+        let available = [];
+
+        // Check Playbook
+        Object.keys(playbookProjects).forEach(key => {
+            const reqs = playbookProjects[key];
+            const stats = checkFeasibility(reqs, stock);
+            if (stats.hasAny) {
+                available.push({ name: key.replace(/_/g, ' '), val: "p:"+key, ...stats });
+            }
+        });
+
+        // Check Custom
+        customProjs.forEach(proj => {
+            const stats = checkFeasibility(proj.fils, stock);
+            if (stats.hasAny) {
+                available.push({ name: proj.name, val: "c:"+proj.id, ...stats });
+            }
+        });
+
+        if (available.length === 0) {
+            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">No projects currently matches your stock.</div>`;
+            return;
+        }
+
+        // Sort: Ready to print first
+        available.sort((a, b) => b.isReady - a.isReady);
+
+        listDiv.innerHTML = available.map(proj => `
+            <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name}')">
+                ${proj.name} <small style="opacity:0.6">(${proj.matchCount}/${proj.totalCount})</small>
+            </div>
+        `).join('');
+    }
+
+    function checkFeasibility(reqs, stock) {
+        let matchCount = 0;
+        let isReady = true;
+        reqs.forEach(req => {
+            const current = stock[req.f] ? stock[req.f].current : 0;
+            if (current >= req.g) {
+                matchCount++;
+            } else {
+                isReady = false;
+            }
+        });
+        return {
+            hasAny: matchCount > 0,
+            isReady: isReady,
+            matchCount: matchCount,
+            totalCount: reqs.length
+        };
     }
 
     // --- Search & Filtering ---
@@ -191,7 +262,6 @@
         let html = filtered.map(f => `
             <div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
         
-        // Add Close Button at bottom
         html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
         res.innerHTML = html;
     }
@@ -206,8 +276,6 @@
         JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); });
         
         let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
-        
-        // Add Close Button at bottom
         html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
         res.innerHTML = html;
     }
@@ -215,7 +283,8 @@
     // --- Logic & Storage ---
     function checkProject(val, name) {
         const [type, id] = val.split(':');
-        const reqs = type === 'p' ? playbookProjects[id] : JSON.parse(localStorage.getItem('customProjs')).find(x => x.id == id).fils;
+        const projs = (type === 'p') ? playbookProjects : JSON.parse(localStorage.getItem('customProjs'));
+        const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         
         let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:1px solid var(--accent);">
@@ -237,7 +306,7 @@
         html += `</div>`;
         document.getElementById('result-box').innerHTML = html;
         forceCloseResults();
-        document.getElementById('projSearchCheck').value = "";
+        window.scrollTo({ top: document.getElementById('result-box').offsetTop - 100, behavior: 'smooth' });
     }
 
     function deleteCustomProject(id) {
@@ -246,14 +315,13 @@
         custom = custom.filter(p => p.id !== id);
         localStorage.setItem('customProjs', JSON.stringify(custom));
         document.getElementById('result-box').innerHTML = "";
-        alert("Project deleted.");
+        updateAvailableProjects();
     }
 
     function addTempChip(f) {
         const grams = prompt(`Weight for ${f} (g):`, "100");
         if(grams) { tempProj.push({f: f, g: parseFloat(grams)}); renderChips(); }
         forceCloseResults();
-        document.getElementById('filamentSearchAdd').value = "";
     }
 
     function renderChips() {
@@ -267,7 +335,7 @@
         custom.push({id: Date.now(), name: name, fils: [...tempProj]});
         localStorage.setItem('customProjs', JSON.stringify(custom));
         tempProj = []; document.getElementById('newProjName').value = ""; renderChips();
-        alert("Custom Project Saved!");
+        updateAvailableProjects();
     }
 
     function adjustWeight(f, amount) {
@@ -277,8 +345,8 @@
         if (amount === -9999 || s[f].current <= 0) delete s[f];
         localStorage.setItem('stock', JSON.stringify(s));
         renderStock();
+        updateAvailableProjects();
         forceCloseResults();
-        document.getElementById('filamentSearchMain').value = "";
     }
 
     function renderStock() {
@@ -302,6 +370,7 @@
     }
 
     renderStock();
+    updateAvailableProjects();
 </script>
 </body>
 </html>
