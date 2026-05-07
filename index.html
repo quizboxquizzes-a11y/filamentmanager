@@ -52,6 +52,10 @@
         .btn-danger { color: var(--danger); border-color: var(--danger); margin-top: 15px; padding: 10px; font-size: 14px; border: 1px solid var(--danger); background: transparent; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
         .btn-danger:hover { background: var(--danger); color: white; }
 
+        /* The Print Button styling */
+        .btn-print { width: 100%; background: var(--accent); color: #000; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
+        .btn-print:hover { filter: brightness(1.1); transform: scale(1.02); }
+
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
         
         .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -79,7 +83,6 @@
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
 
-        /* Improved dot visibility with a border/ring */
         .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
         .dot-row { display: flex; gap: 6px; }
         .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
@@ -106,7 +109,7 @@
 <div class="section" id="available-section">
     <h2>Projects Available</h2>
     <div id="availableProjectsList" class="avail-list">
-        <div style="opacity: 0.5; font-size: 13px;">Add filaments to your inventory to see what you can print...</div>
+        <div style="opacity: 0.5; font-size: 13px;">Add filaments to your inventory...</div>
     </div>
 </div>
 
@@ -190,10 +193,6 @@
         triggerLogoAnimation(); 
     }
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key === "Escape") forceCloseResults();
-    });
-
     function forceCloseResults() {
         document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none');
     }
@@ -219,29 +218,22 @@
         let available = [];
 
         Object.keys(playbookProjects).forEach(key => {
-            const reqs = playbookProjects[key];
-            const stats = checkFeasibility(reqs, stock);
+            const stats = checkFeasibility(playbookProjects[key], stock);
             if (stats.hasAny) {
                 const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                available.push({ 
-                    name: displayName, 
-                    val: "p:"+key, 
-                    realName: key.replace(/_/g, ' '),
-                    fils: reqs,
-                    ...stats 
-                });
+                available.push({ name: displayName, val: "p:"+key, fils: playbookProjects[key], ...stats });
             }
         });
 
         customProjs.forEach(proj => {
             const stats = checkFeasibility(proj.fils, stock);
             if (stats.hasAny) {
-                available.push({ name: proj.name, val: "c:"+proj.id, realName: proj.name, fils: proj.fils, ...stats });
+                available.push({ name: proj.name, val: "c:"+proj.id, fils: proj.fils, ...stats });
             }
         });
 
         if (available.length === 0) {
-            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">No projects currently match your stock.</div>`;
+            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">Add filaments to see matches...</div>`;
             return;
         }
 
@@ -271,11 +263,7 @@
         let isReady = true;
         reqs.forEach(req => {
             const current = stock[req.f] ? stock[req.f].current : 0;
-            if (current >= req.g) {
-                matchCount++;
-            } else {
-                isReady = false;
-            }
+            if (current >= req.g) matchCount++; else isReady = false;
         });
         return { hasAny: matchCount > 0, isReady: isReady, matchCount: matchCount, totalCount: reqs.length };
     }
@@ -285,14 +273,10 @@
         const resultsId = type === 'main' ? 'results-main' : 'results-add';
         const q = document.getElementById(inputId).value.toLowerCase();
         const res = document.getElementById(resultsId);
-        
         res.style.display = 'block';
         const filtered = filaments.filter(f => f.toLowerCase().includes(q));
-        
-        let html = filtered.map(f => `
-            <div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
-        
-        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
+        let html = filtered.map(f => `<div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
+        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close</div>`;
         res.innerHTML = html;
     }
 
@@ -300,17 +284,11 @@
         const q = document.getElementById('projSearchCheck').value.toLowerCase();
         const res = document.getElementById('results-proj');
         res.style.display = 'block';
-        
         let matches = [];
-        Object.keys(playbookProjects).forEach(k => { 
-            if(k.includes(q)) matches.push({name: "Playbook'd: " + k.replace(/_/g, ' '), val: "p:"+k}); 
-        });
-        JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { 
-            if(p.name.toLowerCase().includes(q)) matches.push({name: p.name, val: "c:"+p.id}); 
-        });
-        
+        Object.keys(playbookProjects).forEach(k => { if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); });
+        JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: p.name, val: "c:"+p.id}); });
         let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name.replace(/'/g, "\\'")}')">${m.name}</div>`).join('');
-        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
+        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close</div>`;
         res.innerHTML = html;
     }
 
@@ -320,38 +298,55 @@
         const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         
+        let canPrint = true;
         let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);">
                     <h3 style="margin-top:0; color:var(--accent); text-transform:uppercase; font-size:14px; letter-spacing: 1px;">${name}</h3>`;
         
         reqs.forEach(item => {
             const current = stock[item.f] ? stock[item.f].current : 0;
             const isMissing = current < item.g;
-            const diff = (item.g - current).toFixed(2);
-
+            if(isMissing) canPrint = false;
             html += `<div class="tag ${isMissing ? 'missing' : 'ready'}">
-                        <div class="tag-header">
-                            <span>${item.f}</span>
-                            <span>${current}g / ${item.g}g</span>
-                        </div>
-                        <div class="needed-text">
-                            ${isMissing ? `⚠️ Short by ${diff}g` : `✅ Stock Sufficient`}
-                        </div>
+                        <div class="tag-header"><span>${item.f}</span><span>${current}g / ${item.g}g</span></div>
+                        <div class="needed-text">${isMissing ? `⚠️ Short by ${(item.g - current).toFixed(2)}g` : `✅ Ready`}</div>
                      </div>`;
         });
 
-        if (type === 'c') {
-            html += `<button class="btn-danger" onclick="deleteCustomProject(${id})">Delete Custom Project</button>`;
+        // ONLY add the Print button if all materials are present
+        if(canPrint) {
+            html += `<button class="btn-print" onclick="commitPrint('${type}', '${id}')">🚀 Commit to Print (Deduct Stock)</button>`;
         }
+
+        if (type === 'c') html += `<button class="btn-danger" onclick="deleteCustomProject(${id})">Delete Custom Project</button>`;
         
         html += `</div>`;
         document.getElementById('result-box').innerHTML = html;
         forceCloseResults();
-        
         document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function commitPrint(type, id) {
+        const projs = (type === 'p') ? playbookProjects : JSON.parse(localStorage.getItem('customProjs'));
+        const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
+        let s = JSON.parse(localStorage.getItem('stock') || "{}");
+
+        if(!confirm("This will permanently subtract these weights from your inventory. Continue?")) return;
+
+        reqs.forEach(item => {
+            if(s[item.f]) {
+                s[item.f].current = parseFloat((s[item.f].current - item.g).toFixed(2));
+                if(s[item.f].current < 0) s[item.f].current = 0; // Safeguard
+            }
+        });
+
+        localStorage.setItem('stock', JSON.stringify(s));
+        document.getElementById('result-box').innerHTML = `<div style="padding:20px; text-align:center; color:var(--accent); font-weight:bold;">✨ Stock Updated! Print Logged.</div>`;
+        renderStock();
+        updateAvailableProjects();
+    }
+
     function deleteCustomProject(id) {
-        if (!confirm("Are you sure you want to delete this custom project?")) return;
+        if (!confirm("Delete this project?")) return;
         let custom = JSON.parse(localStorage.getItem('customProjs') || "[]");
         custom = custom.filter(p => p.id !== id);
         localStorage.setItem('customProjs', JSON.stringify(custom));
@@ -383,7 +378,7 @@
         let s = JSON.parse(localStorage.getItem('stock') || "{}");
         if (!s[f]) s[f] = { current: 1000, max: 1000 };
         s[f].current = parseFloat((s[f].current + amount).toFixed(2));
-        if (amount === -9999 || s[f].current <= 0) delete s[f];
+        if (amount === -9999 || s[f].current < 0) delete s[f];
         localStorage.setItem('stock', JSON.stringify(s));
         renderStock();
         updateAvailableProjects();
@@ -397,7 +392,6 @@
         Object.keys(s).forEach(f => {
             const data = s[f];
             const detectedColor = getFilamentColor(f);
-
             container.innerHTML += `
                 <div class="stock-item">
                     <button class="delete-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -9999)">×</button>
