@@ -62,8 +62,11 @@
         .close-search-btn:hover { background: var(--danger); color: white; }
 
         .chip { display: inline-flex; align-items: center; background: var(--bg); padding: 8px 16px; border-radius: 25px; margin: 6px; border: 1px solid var(--accent); font-size: 13px; font-weight: 600; }
-        .tag { padding: 10px; margin: 5px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between;}
-        .tag.missing { border-color: var(--danger); color: var(--danger); }
+        .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; flex-direction: column; gap: 4px;}
+        .tag-header { display: flex; justify-content: space-between; font-weight: bold; }
+        .tag.missing { border-left: 4px solid var(--danger); }
+        .tag.ready { border-left: 4px solid var(--accent); }
+        .needed-text { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; }
@@ -95,7 +98,7 @@
     </div>
 </div>
 
-<div class="section">
+<div class="section" id="available-section">
     <h2>Projects Available</h2>
     <div id="availableProjectsList" class="avail-list">
         <div style="opacity: 0.5; font-size: 13px;">Add filaments to your inventory to see what you can print...</div>
@@ -109,7 +112,7 @@
     <div id="ownedList" class="inventory-grid"></div>
 </div>
 
-<div class="section">
+<div class="section" id="checker-section">
     <h2>Project Checker</h2>
     <input id="projSearchCheck" placeholder="Click to see projects or type..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
     <div id="results-proj" class="search-results"></div>
@@ -188,7 +191,6 @@
         }
     }
 
-    // --- Available Projects Logic (Updated with Prefix) ---
     function updateAvailableProjects() {
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         const customProjs = JSON.parse(localStorage.getItem('customProjs') || "[]");
@@ -196,12 +198,10 @@
         
         let available = [];
 
-        // Check Playbook
         Object.keys(playbookProjects).forEach(key => {
             const reqs = playbookProjects[key];
             const stats = checkFeasibility(reqs, stock);
             if (stats.hasAny) {
-                // Formatting name to include "Playbook'd:"
                 const displayName = "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 available.push({ 
                     name: displayName, 
@@ -212,7 +212,6 @@
             }
         });
 
-        // Check Custom
         customProjs.forEach(proj => {
             const stats = checkFeasibility(proj.fils, stock);
             if (stats.hasAny) {
@@ -228,7 +227,7 @@
         available.sort((a, b) => b.isReady - a.isReady);
 
         listDiv.innerHTML = available.map(proj => `
-            <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name}')">
+            <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name.replace(/'/g, "\\'")}')">
                 ${proj.name} <small style="opacity:0.6">(${proj.matchCount}/${proj.totalCount})</small>
             </div>
         `).join('');
@@ -248,7 +247,6 @@
         return { hasAny: matchCount > 0, isReady: isReady, matchCount: matchCount, totalCount: reqs.length };
     }
 
-    // --- Search & Filtering ---
     function updateSearch(type) {
         const inputId = type === 'main' ? 'filamentSearchMain' : 'filamentSearchAdd';
         const resultsId = type === 'main' ? 'results-main' : 'results-add';
@@ -272,33 +270,39 @@
         
         let matches = [];
         Object.keys(playbookProjects).forEach(k => { 
-            if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); 
+            if(k.includes(q)) matches.push({name: "Playbook'd: " + k.replace(/_/g, ' '), val: "p:"+k}); 
         });
         JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { 
-            if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); 
+            if(p.name.toLowerCase().includes(q)) matches.push({name: p.name, val: "c:"+p.id}); 
         });
         
-        let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
+        let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name.replace(/'/g, "\\'")}')">${m.name}</div>`).join('');
         html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
         res.innerHTML = html;
     }
 
-    // --- Logic & Storage ---
     function checkProject(val, name) {
         const [type, id] = val.split(':');
         const projs = (type === 'p') ? playbookProjects : JSON.parse(localStorage.getItem('customProjs'));
         const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         
-        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:1px solid var(--accent);">
-                    <h3 style="margin-top:0; color:var(--accent); text-transform:uppercase; font-size:14px;">${name}</h3>`;
+        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);">
+                    <h3 style="margin-top:0; color:var(--accent); text-transform:uppercase; font-size:14px; letter-spacing: 1px;">${name}</h3>`;
         
         reqs.forEach(item => {
             const current = stock[item.f] ? stock[item.f].current : 0;
             const isMissing = current < item.g;
-            html += `<div class="tag ${isMissing ? 'missing' : ''}">
-                        <span>${item.f}</span>
-                        <span>${current}g / ${item.g}g</span>
+            const diff = (item.g - current).toFixed(2);
+
+            html += `<div class="tag ${isMissing ? 'missing' : 'ready'}">
+                        <div class="tag-header">
+                            <span>${item.f}</span>
+                            <span>${current}g / ${item.g}g</span>
+                        </div>
+                        <div class="needed-text">
+                            ${isMissing ? `⚠️ Short by ${diff}g` : `✅ Stock Sufficient`}
+                        </div>
                      </div>`;
         });
 
@@ -309,7 +313,9 @@
         html += `</div>`;
         document.getElementById('result-box').innerHTML = html;
         forceCloseResults();
-        window.scrollTo({ top: document.getElementById('result-box').offsetTop - 100, behavior: 'smooth' });
+        
+        // Auto-scroll to details
+        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function deleteCustomProject(id) {
