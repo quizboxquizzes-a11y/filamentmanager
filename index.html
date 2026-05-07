@@ -5,35 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filament Stock Checker</title>
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='none' stroke='%2300FF7F' stroke-width='8'/><circle cx='50' cy='50' r='12' fill='%2300FF7F'/><g stroke='%2300FF7F' stroke-width='8' stroke-linecap='round'><line x1='50' y1='20' x2='50' y2='38'/><line x1='24' y1='65' x2='40' y2='56'/><line x1='76' y1='65' x2='60' y2='56'/></g></svg>">
-
     <style>
         :root {
             --bg: #1A1A1A; --card: #232323; --border: #2E2E2E; --text: #EAEAEA;
-            --accent: #00FF7F; --danger: #FF4C4C; --shadow: 0 4px 14px rgba(0,0,0,0.35);
+            --accent: #00FF7F; --danger: #FF4C4C; --warning: #FFD700; --shadow: 0 4px 14px rgba(0,0,0,0.35);
         }
         :root.light {
             --bg: #FFFFFF; --card: #F7F7F7; --border: #DDDDDD; --text: #111;
-            --accent: #00B368; --danger: #E53935; --shadow: 0 4px 14px rgba(0,0,0,0.12);
+            --accent: #00B368; --danger: #E53935; --warning: #F9A825; --shadow: 0 4px 14px rgba(0,0,0,0.12);
         }
 
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
         
         .header { display: flex; justify-content: flex-start; align-items: center; padding: 30px 0; max-width: 1100px; margin: 0 auto; }
         .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-        #logo-svg { width: 48px; height: 48px; overflow: visible; }
         
-        .animate-spin { 
-            animation: spoolSpin 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            transform-origin: center;
-        }
-        @keyframes spoolSpin { 
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); } 
-        }
-
         .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; max-width: 1100px; margin: 20px auto; box-shadow: var(--shadow); position: relative; }
-        h2 { margin-top: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
+        h2 { margin-top: 0; font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
         input { width: 100%; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
 
         .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 15px; }
@@ -48,96 +36,54 @@
         .weight-btn { padding: 10px; font-size: 11px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .btn-ui { width: 100%; background: transparent; color: var(--accent); padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 800; border: 2px solid var(--accent); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; margin-top: 10px; }
-        .btn-ui:hover { background: var(--accent); color: #000; }
-        .btn-danger { color: var(--danger); border-color: var(--danger); margin-top: 15px; padding: 10px; font-size: 14px; border: 1px solid var(--danger); background: transparent; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-danger:hover { background: var(--danger); color: white; }
-
-        /* The Print Button styling */
         .btn-print { width: 100%; background: var(--accent); color: #000; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
-        .btn-print:hover { filter: brightness(1.1); transform: scale(1.02); }
-
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
         
         .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
-        
-        .close-search-btn { padding: 10px; background: var(--card); color: var(--danger); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
-        .close-search-btn:hover { background: var(--danger); color: white; }
 
-        .chip { display: inline-flex; align-items: center; background: var(--bg); padding: 8px 16px; border-radius: 25px; margin: 6px; border: 1px solid var(--accent); font-size: 13px; font-weight: 600; }
         .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; flex-direction: column; gap: 4px;}
-        .tag-header { display: flex; justify-content: space-between; font-weight: bold; }
         .tag.missing { border-left: 4px solid var(--danger); }
         .tag.ready { border-left: 4px solid var(--accent); }
-        .needed-text { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 6px; }
-        .avail-item:hover { border-color: var(--accent); transform: translateY(-2px); }
         .avail-item.ready { border: 1px solid var(--accent); background: rgba(0, 255, 127, 0.05); }
-        .avail-item.ready b::before { content: "✅ "; }
+        .avail-item.almost { border: 1px solid var(--warning); background: rgba(255, 215, 0, 0.05); }
 
-        .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
-        .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
-        .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
-        :root.light .theme-toggle-circle { left: 32px; }
-
-        .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
+        .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; }
         .dot-row { display: flex; gap: 6px; }
-        .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); box-shadow: 0 0 3px rgba(0,0,0,0.5); }
+        .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
 
 <div class="header">
-    <div class="logo-container" onclick="triggerLogoAnimation()">
-        <svg id="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="4" opacity="0.1"/>
-            <circle cx="50" cy="50" r="12" fill="var(--accent)"/>
-            <g stroke="var(--accent)" stroke-width="8" stroke-linecap="round">
-                <line x1="50" y1="15" x2="50" y2="35"/>
-                <line x1="20" y1="68" x2="38" y2="58"/>
-                <line x1="80" y1="68" x2="62" y2="58"/>
-            </g>
-            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="276" stroke-dashoffset="60" />
-        </svg>
+    <div class="logo-container">
         <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
     </div>
 </div>
 
-<div class="section" id="available-section">
-    <h2>Projects Available</h2>
-    <div id="availableProjectsList" class="avail-list">
-        <div style="opacity: 0.5; font-size: 13px;">Add filaments to your inventory...</div>
-    </div>
+<div class="section">
+    <h2>Ready to Print</h2>
+    <div id="readyList" class="avail-list"></div>
+    <h2 style="margin-top: 20px; color: var(--warning);">Almost Ready (70%+)</h2>
+    <div id="almostList" class="avail-list"></div>
 </div>
 
 <div class="section">
     <h2>Inventory Manager</h2>
-    <input id="filamentSearchMain" placeholder="Click to see filaments or type..." onfocus="updateSearch('main')" oninput="updateSearch('main')">
+    <input id="filamentSearchMain" placeholder="Click to add filament to inventory..." onfocus="updateSearch('main')" oninput="updateSearch('main')">
     <div id="results-main" class="search-results"></div>
     <div id="ownedList" class="inventory-grid"></div>
 </div>
 
 <div class="section" id="checker-section">
     <h2>Project Checker</h2>
-    <input id="projSearchCheck" placeholder="Click to see projects or type..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
+    <input id="projSearchCheck" placeholder="Search projects..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
     <div id="results-proj" class="search-results"></div>
     <div id="result-box"></div>
-</div>
-
-<div class="section">
-    <h2>Create Custom Project</h2>
-    <input id="newProjName" placeholder="Enter custom project title...">
-    <input id="filamentSearchAdd" placeholder="Click to add filaments..." onfocus="updateSearch('add')" oninput="updateSearch('add')">
-    <div id="results-add" class="search-results"></div>
-    <div id="chips" style="margin-bottom: 20px;"></div>
-    <button class="btn-ui" onclick="saveProject()">Save Custom Project</button>
-</div>
-
-<div class="theme-toggle-container">
-    <div class="theme-toggle" onclick="toggleTheme()"><div class="theme-toggle-circle"></div></div>
 </div>
 
 <script>
@@ -145,117 +91,46 @@
         backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
         cribbage: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 285.5 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 182.4 }, { f: "Bambu PLA Matte Dark Red", g: 29.12 }],
         hangman: [{ f: "Bambu PLA Matte Charcoal (11101)", g: 410 }, { f: "Bambu PLA Matte Desert Tan", g: 240.5 }, { f: "Bambu PLA Matte Bone White", g: 88.03 }],
-        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
         sea_battle: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }],
-        mancala: [{ f: "Bambu PLA Matte Terracotta", g: 280 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 90 }, { f: "Bambu PLA Matte Bone White", g: 75 }],
-        crosswords: [{ f: "Bambu PLA Matte Dark Chocolate (11802)", g: 240 }, { f: "Bambu PLA Matte Desert Tan", g: 110 }, { f: "Bambu PLA Matte Bone White", g: 80 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 40 }],
-        four_in_a_row: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 210 }, { f: "Bambu PLA Matte Dark Red", g: 145 }, { f: "Bambu PLA Matte Yellow (10400)", g: 145 }],
-        checkers: [{ f: "Bambu PLA Matte Charcoal (11101)", g: 240 }, { f: "Bambu PLA Matte Bone White", g: 240 }, { f: "Bambu PLA Matte Dark Red", g: 50 }],
-        reversi: [{ f: "Bambu PLA Matte Apple Green (11502)", g: 260 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 120 }, { f: "Bambu PLA Matte Bone White", g: 120 }],
-        snakes_and_ladders: [{ f: "Bambu PLA Matte Grass Green", g: 290 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 160 }, { f: "Bambu PLA Matte Mandarin Orange (11300)", g: 40 }],
-        settlers_storage: [{ f: "Bambu PLA Matte Terracotta", g: 380 }, { f: "Bambu PLA Matte Bone White", g: 110 }],
-        sling_puck: [{ f: "Bambu PLA Matte Dark Green (11501)", g: 310 }, { f: "Bambu PLA Matte Bone White", g: 90 }],
-        shut_the_box: [{ f: "Bambu PLA Matte Terracotta", g: 275 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 115 }, { f: "Bambu PLA Matte Bone White", g: 30 }],
-        hook_and_ring: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 240 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 120 }, { f: "Bambu PLA Matte Dark Red", g: 40 }]
+        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }]
     };
 
-    const filaments = [
-        "Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Gray (10103)", "Bambu PLA Silver (10102)", 
-        "Bambu PLA Bronze", "Bambu PLA Gold", "Bambu PLA Green (10501)", "Bambu PLA Dark Red", 
-        "Bambu PLA Dark Blue", "Bambu PLA Yellow (10400)", "Bambu PLA Orange (10300)", "Bambu PLA Cyan (10603)", 
-        "Bambu PLA Magenta (10202)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Ash Grey (11102)", 
-        "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Green (11501)", "Bambu PLA Matte Terracotta", 
-        "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Ivory White (11100)", 
-        "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Dark Chocolate (11802)",
-        "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)", "Bambu PLA Matte Yellow (10400)",
-        "Bambu PLA Matte Ice Blue", "Bambu PLA Matte Lilac Purple", "Bambu PLA Matte Sakura Pink", 
-        "Polymaker PLA Jungle Green", "Polymaker PLA Stone Blue"
-    ];
-
-    const filamentColors = {
-        "Black": "#0a0a0a", "White": "#ffffff", "Gray": "#808080", "Silver": "#c0c0c0", "Bronze": "#cd7f32", "Gold": "#ffd700",
-        "Green": "#008000", "Red": "#ff0000", "Blue": "#0000ff", "Yellow": "#ffff00", "Orange": "#ffa500", "Cyan": "#00ffff",
-        "Magenta": "#ff00ff", "Charcoal": "#2b2b2b", "Ash": "#b2b2b2", "Terracotta": "#e2725b", "Tan": "#d2b48c",
-        "Apple": "#8db600", "Ivory": "#fffff0", "Bone": "#e3dac9", "Brown": "#5d4037", "Chocolate": "#3e2723",
-        "Grass": "#7cfc00", "Mandarin": "#f28500", "Ice": "#99ffff", "Lilac": "#c8a2c8", "Sakura": "#ffc0cb", "Jungle": "#29ab87", "Stone": "#59788e"
-    };
-
-    let tempProj = [];
-
-    function triggerLogoAnimation() {
-        const logo = document.getElementById('logo-svg');
-        logo.classList.remove('animate-spin');
-        setTimeout(() => logo.classList.add('animate-spin'), 10);
-    }
-
-    function toggleTheme() { 
-        document.documentElement.classList.toggle('light'); 
-        triggerLogoAnimation(); 
-    }
-
-    function forceCloseResults() {
-        document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none');
-    }
-
-    function closeAllResults(e) {
-        if (!e.target.closest('input') && !e.target.closest('.search-results')) {
-            forceCloseResults();
-        }
-    }
+    const filaments = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)"];
+    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#0000ff", "Red": "#ff0000", "Brown": "#5d4037" };
 
     function getFilamentColor(name) {
-        for(const [key, val] of Object.entries(filamentColors)) {
-            if(name.includes(key)) return val;
-        }
+        for(const [key, val] of Object.entries(filamentColors)) { if(name.includes(key)) return val; }
         return "#888";
     }
 
     function updateAvailableProjects() {
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
-        const customProjs = JSON.parse(localStorage.getItem('customProjs') || "[]");
-        const listDiv = document.getElementById('availableProjectsList');
+        const readyDiv = document.getElementById('readyList');
+        const almostDiv = document.getElementById('almostList');
         
-        let available = [];
+        let readyArr = [];
+        let almostArr = [];
 
         Object.keys(playbookProjects).forEach(key => {
-            const stats = checkFeasibility(playbookProjects[key], stock);
-            if (stats.hasAny) {
-                const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                available.push({ name: displayName, val: "p:"+key, fils: playbookProjects[key], ...stats });
-            }
+            const reqs = playbookProjects[key];
+            const stats = checkFeasibility(reqs, stock);
+            const data = { name: key.replace(/_/g, ' '), val: "p:"+key, fils: reqs, ...stats };
+            
+            if(stats.isReady) readyArr.push(data);
+            else if(stats.percentage >= 70) almostArr.push(data);
         });
 
-        customProjs.forEach(proj => {
-            const stats = checkFeasibility(proj.fils, stock);
-            if (stats.hasAny) {
-                available.push({ name: proj.name, val: "c:"+proj.id, fils: proj.fils, ...stats });
-            }
-        });
-
-        if (available.length === 0) {
-            listDiv.innerHTML = `<div style="opacity: 0.5; font-size: 13px;">Add filaments to see matches...</div>`;
-            return;
-        }
-
-        available.sort((a, b) => b.isReady - a.isReady);
-
-        listDiv.innerHTML = available.map(proj => {
-            const dotsHtml = proj.fils.map(f => {
-                const color = getFilamentColor(f.f);
-                const hasIt = stock[f.f] && stock[f.f].current >= f.g;
-                return `<div class="mini-dot" style="background: ${hasIt ? color : 'transparent'}; border-color: ${color}; opacity: 1;"></div>`;
-            }).join('');
-
-            return `
-                <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name.replace(/'/g, "\\'")}')">
-                    <b>${proj.name}</b>
-                    <div style="display:flex; justify-content: space-between; align-items:center;">
-                        <small style="opacity:0.6">${proj.matchCount}/${proj.totalCount}</small>
-                        <div class="dot-row">${dotsHtml}</div>
-                    </div>
+        const renderItem = (p, type) => `
+            <div class="avail-item ${type}" onclick="checkProject('${p.val}', '${p.name}')">
+                <b>${p.name.toUpperCase()}</b>
+                <div style="display:flex; justify-content: space-between; align-items:center; gap:10px;">
+                    <small style="opacity:0.6">${p.matchCount}/${p.totalCount}</small>
+                    <div class="dot-row">${p.fils.map(f => `<div class="mini-dot" style="background:${(stock[f.f] && stock[f.f].current >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div>
                 </div>
-            `;
-        }).join('');
+            </div>`;
+
+        readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small style='opacity:0.5'>None ready.</small>";
+        almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>None near completion.</small>";
     }
 
     function checkFeasibility(reqs, stock) {
@@ -265,113 +140,7 @@
             const current = stock[req.f] ? stock[req.f].current : 0;
             if (current >= req.g) matchCount++; else isReady = false;
         });
-        return { hasAny: matchCount > 0, isReady: isReady, matchCount: matchCount, totalCount: reqs.length };
-    }
-
-    function updateSearch(type) {
-        const inputId = type === 'main' ? 'filamentSearchMain' : 'filamentSearchAdd';
-        const resultsId = type === 'main' ? 'results-main' : 'results-add';
-        const q = document.getElementById(inputId).value.toLowerCase();
-        const res = document.getElementById(resultsId);
-        res.style.display = 'block';
-        const filtered = filaments.filter(f => f.toLowerCase().includes(q));
-        let html = filtered.map(f => `<div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
-        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close</div>`;
-        res.innerHTML = html;
-    }
-
-    function updateProjSearch() {
-        const q = document.getElementById('projSearchCheck').value.toLowerCase();
-        const res = document.getElementById('results-proj');
-        res.style.display = 'block';
-        let matches = [];
-        Object.keys(playbookProjects).forEach(k => { if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); });
-        JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: p.name, val: "c:"+p.id}); });
-        let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name.replace(/'/g, "\\'")}')">${m.name}</div>`).join('');
-        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close</div>`;
-        res.innerHTML = html;
-    }
-
-    function checkProject(val, name) {
-        const [type, id] = val.split(':');
-        const projs = (type === 'p') ? playbookProjects : JSON.parse(localStorage.getItem('customProjs'));
-        const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
-        const stock = JSON.parse(localStorage.getItem('stock') || "{}");
-        
-        let canPrint = true;
-        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);">
-                    <h3 style="margin-top:0; color:var(--accent); text-transform:uppercase; font-size:14px; letter-spacing: 1px;">${name}</h3>`;
-        
-        reqs.forEach(item => {
-            const current = stock[item.f] ? stock[item.f].current : 0;
-            const isMissing = current < item.g;
-            if(isMissing) canPrint = false;
-            html += `<div class="tag ${isMissing ? 'missing' : 'ready'}">
-                        <div class="tag-header"><span>${item.f}</span><span>${current}g / ${item.g}g</span></div>
-                        <div class="needed-text">${isMissing ? `⚠️ Short by ${(item.g - current).toFixed(2)}g` : `✅ Ready`}</div>
-                     </div>`;
-        });
-
-        // ONLY add the Print button if all materials are present
-        if(canPrint) {
-            html += `<button class="btn-print" onclick="commitPrint('${type}', '${id}')">🚀 Commit to Print (Deduct Stock)</button>`;
-        }
-
-        if (type === 'c') html += `<button class="btn-danger" onclick="deleteCustomProject(${id})">Delete Custom Project</button>`;
-        
-        html += `</div>`;
-        document.getElementById('result-box').innerHTML = html;
-        forceCloseResults();
-        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    function commitPrint(type, id) {
-        const projs = (type === 'p') ? playbookProjects : JSON.parse(localStorage.getItem('customProjs'));
-        const reqs = (type === 'p') ? projs[id] : projs.find(x => x.id == id).fils;
-        let s = JSON.parse(localStorage.getItem('stock') || "{}");
-
-        if(!confirm("This will permanently subtract these weights from your inventory. Continue?")) return;
-
-        reqs.forEach(item => {
-            if(s[item.f]) {
-                s[item.f].current = parseFloat((s[item.f].current - item.g).toFixed(2));
-                if(s[item.f].current < 0) s[item.f].current = 0; // Safeguard
-            }
-        });
-
-        localStorage.setItem('stock', JSON.stringify(s));
-        document.getElementById('result-box').innerHTML = `<div style="padding:20px; text-align:center; color:var(--accent); font-weight:bold;">✨ Stock Updated! Print Logged.</div>`;
-        renderStock();
-        updateAvailableProjects();
-    }
-
-    function deleteCustomProject(id) {
-        if (!confirm("Delete this project?")) return;
-        let custom = JSON.parse(localStorage.getItem('customProjs') || "[]");
-        custom = custom.filter(p => p.id !== id);
-        localStorage.setItem('customProjs', JSON.stringify(custom));
-        document.getElementById('result-box').innerHTML = "";
-        updateAvailableProjects();
-    }
-
-    function addTempChip(f) {
-        const grams = prompt(`Weight for ${f} (g):`, "100");
-        if(grams) { tempProj.push({f: f, g: parseFloat(grams)}); renderChips(); }
-        forceCloseResults();
-    }
-
-    function renderChips() {
-        document.getElementById('chips').innerHTML = tempProj.map((p, i) => `<span class="chip">${p.f} (${p.g}g) <b onclick="tempProj.splice(${i},1);renderChips();" style="cursor:pointer;margin-left:10px;color:red">×</b></span>`).join('');
-    }
-
-    function saveProject() {
-        const name = document.getElementById('newProjName').value;
-        if(!name || tempProj.length === 0) return alert("Missing name or filaments");
-        let custom = JSON.parse(localStorage.getItem('customProjs') || "[]");
-        custom.push({id: Date.now(), name: name, fils: [...tempProj]});
-        localStorage.setItem('customProjs', JSON.stringify(custom));
-        tempProj = []; document.getElementById('newProjName').value = ""; renderChips();
-        updateAvailableProjects();
+        return { isReady, matchCount, totalCount: reqs.length, percentage: (matchCount / reqs.length) * 100 };
     }
 
     function adjustWeight(f, amount) {
@@ -382,32 +151,69 @@
         localStorage.setItem('stock', JSON.stringify(s));
         renderStock();
         updateAvailableProjects();
-        forceCloseResults();
     }
 
     function renderStock() {
         const s = JSON.parse(localStorage.getItem('stock') || "{}");
         const container = document.getElementById('ownedList');
-        container.innerHTML = "";
-        Object.keys(s).forEach(f => {
-            const data = s[f];
-            const detectedColor = getFilamentColor(f);
-            container.innerHTML += `
-                <div class="stock-item">
-                    <button class="delete-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -9999)">×</button>
-                    <div style="font-size:12px; font-weight:700; opacity:0.8;">${f}</div>
-                    <div class="weight-display">${data.current}g</div>
-                    <div class="progress-container"><div class="progress-bar" style="width:${(data.current/data.max)*100}%"></div></div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                         <div class="color-dot" style="background:${detectedColor}"></div>
-                         <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
-                            <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -50)">-50g</button>
-                            <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', 100)">+100g</button>
-                        </div>
+        container.innerHTML = Object.keys(s).map(f => `
+            <div class="stock-item">
+                <button class="delete-btn" onclick="adjustWeight('${f}', -9999)">×</button>
+                <div style="font-size:11px; font-weight:700; opacity:0.7;">${f}</div>
+                <div class="weight-display">${s[f].current}g</div>
+                <div class="progress-container"><div class="progress-bar" style="width:${(s[f].current/1000)*100}%"></div></div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="color-dot" style="background:${getFilamentColor(f)}"></div>
+                    <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
+                        <button class="weight-btn" onclick="adjustWeight('${f}', -50)">-50g</button>
+                        <button class="weight-btn" onclick="adjustWeight('${f}', 100)">+100g</button>
                     </div>
-                </div>`;
-        });
+                </div>
+            </div>`).join('');
     }
+
+    function updateSearch(type) {
+        const q = document.getElementById('filamentSearchMain').value.toLowerCase();
+        const res = document.getElementById('results-main');
+        res.style.display = 'block';
+        res.innerHTML = filaments.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="adjustWeight('${f}', 0)">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+    }
+
+    function updateProjSearch() {
+        const q = document.getElementById('projSearchCheck').value.toLowerCase();
+        const res = document.getElementById('results-proj');
+        res.style.display = 'block';
+        res.innerHTML = Object.keys(playbookProjects).filter(k => k.includes(q)).map(k => `<div class="search-item" onmousedown="checkProject('p:${k}', '${k}')">${k}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+    }
+
+    function checkProject(val, name) {
+        const id = val.split(':')[1];
+        const reqs = playbookProjects[id];
+        const stock = JSON.parse(localStorage.getItem('stock') || "{}");
+        let canPrint = true;
+        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name.toUpperCase()}</h3>`;
+        reqs.forEach(item => {
+            const current = stock[item.f] ? stock[item.f].current : 0;
+            if(current < item.g) canPrint = false;
+            html += `<div class="tag ${current < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${current}g / ${item.g}g</div>`;
+        });
+        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print</button>`;
+        document.getElementById('result-box').innerHTML = html + `</div>`;
+        forceCloseResults();
+        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function commitPrint(id) {
+        if(!confirm("Subtract weights from stock?")) return;
+        let s = JSON.parse(localStorage.getItem('stock') || "{}");
+        playbookProjects[id].forEach(item => { if(s[item.f]) s[item.f].current = Math.max(0, s[item.f].current - item.g); });
+        localStorage.setItem('stock', JSON.stringify(s));
+        renderStock(); updateAvailableProjects();
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Stock Updated!</div>";
+    }
+
+    function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
+    function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
 
     renderStock();
     updateAvailableProjects();
