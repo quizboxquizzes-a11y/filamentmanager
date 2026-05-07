@@ -53,7 +53,7 @@
         .btn-danger:hover { background: var(--danger); color: white; }
 
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
-        .search-results { max-height: 250px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 100; position: relative; }
+        .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 100; position: relative; }
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
         
@@ -170,7 +170,7 @@
         const res = document.getElementById(resultsId);
         
         res.style.display = 'block';
-        const filtered = filaments.filter(f => f.toLowerCase().includes(q)).slice(0,12);
+        const filtered = filaments.filter(f => f.toLowerCase().includes(q));
         
         res.innerHTML = filtered.map(f => `
             <div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
@@ -185,7 +185,7 @@
         Object.keys(playbookProjects).forEach(k => { if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); });
         JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); });
         
-        res.innerHTML = matches.slice(0,10).map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
+        res.innerHTML = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
     }
 
     function checkProject(val, name) {
