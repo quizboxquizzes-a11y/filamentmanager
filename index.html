@@ -69,18 +69,19 @@
         .needed-text { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 6px; }
         .avail-item:hover { border-color: var(--accent); transform: translateY(-2px); }
         .avail-item.ready { border: 1px solid var(--accent); background: rgba(0, 255, 127, 0.05); }
-        .avail-item.ready::before { content: "✅ "; }
+        .avail-item.ready b::before { content: "✅ "; }
 
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
 
-        /* Added for the color dot */
         .color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); display: inline-block; }
+        .dot-row { display: flex; gap: 4px; }
+        .mini-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
@@ -167,7 +168,6 @@
         "Polymaker PLA Jungle Green", "Polymaker PLA Stone Blue"
     ];
 
-    /* Color mapping for small dots */
     const filamentColors = {
         "Black": "#111", "White": "#F9F9F9", "Gray": "#888", "Silver": "#C0C0C0", "Bronze": "#CD7F32", "Gold": "#D4AF37",
         "Green": "#228B22", "Red": "#B22222", "Blue": "#00008B", "Yellow": "#FFD700", "Orange": "#FF8C00", "Cyan": "#00FFFF",
@@ -203,6 +203,13 @@
         }
     }
 
+    function getFilamentColor(name) {
+        for(const [key, val] of Object.entries(filamentColors)) {
+            if(name.includes(key)) return val;
+        }
+        return "#888";
+    }
+
     function updateAvailableProjects() {
         const stock = JSON.parse(localStorage.getItem('stock') || "{}");
         const customProjs = JSON.parse(localStorage.getItem('customProjs') || "[]");
@@ -214,11 +221,12 @@
             const reqs = playbookProjects[key];
             const stats = checkFeasibility(reqs, stock);
             if (stats.hasAny) {
-                const displayName = "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const displayName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 available.push({ 
                     name: displayName, 
                     val: "p:"+key, 
                     realName: key.replace(/_/g, ' '),
+                    fils: reqs,
                     ...stats 
                 });
             }
@@ -227,7 +235,7 @@
         customProjs.forEach(proj => {
             const stats = checkFeasibility(proj.fils, stock);
             if (stats.hasAny) {
-                available.push({ name: proj.name, val: "c:"+proj.id, realName: proj.name, ...stats });
+                available.push({ name: proj.name, val: "c:"+proj.id, realName: proj.name, fils: proj.fils, ...stats });
             }
         });
 
@@ -238,11 +246,23 @@
 
         available.sort((a, b) => b.isReady - a.isReady);
 
-        listDiv.innerHTML = available.map(proj => `
-            <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name.replace(/'/g, "\\'")}')">
-                ${proj.name} <small style="opacity:0.6">(${proj.matchCount}/${proj.totalCount})</small>
-            </div>
-        `).join('');
+        listDiv.innerHTML = available.map(proj => {
+            const dotsHtml = proj.fils.map(f => {
+                const color = getFilamentColor(f.f);
+                const hasIt = stock[f.f] && stock[f.f].current >= f.g;
+                return `<div class="mini-dot" style="background: ${hasIt ? color : 'transparent'}; border-color: ${color}; opacity: ${hasIt ? 1 : 0.4}"></div>`;
+            }).join('');
+
+            return `
+                <div class="avail-item ${proj.isReady ? 'ready' : ''}" onclick="checkProject('${proj.val}', '${proj.name.replace(/'/g, "\\'")}')">
+                    <b>${proj.name}</b>
+                    <div style="display:flex; justify-content: space-between; align-items:center;">
+                        <small style="opacity:0.6">${proj.matchCount}/${proj.totalCount}</small>
+                        <div class="dot-row">${dotsHtml}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function checkFeasibility(reqs, stock) {
@@ -326,8 +346,11 @@
         document.getElementById('result-box').innerHTML = html;
         forceCloseResults();
         
-        // Auto-scroll to details
-        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // AUTO-SCROLL LOGIC: Glides smoothly to the checker section
+        document.getElementById('checker-section').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
     }
 
     function deleteCustomProject(id) {
@@ -376,12 +399,7 @@
         container.innerHTML = "";
         Object.keys(s).forEach(f => {
             const data = s[f];
-            
-            // Logic to find color for dot
-            let detectedColor = "#888"; 
-            for(const [key, val] of Object.entries(filamentColors)) {
-                if(f.includes(key)) { detectedColor = val; break; }
-            }
+            const detectedColor = getFilamentColor(f);
 
             container.innerHTML += `
                 <div class="stock-item">
