@@ -184,7 +184,11 @@
         logo.classList.add('animate-active');
     }
 
-    function toggleTheme() { document.documentElement.classList.toggle('light'); triggerLogo(); }
+    // ANIMATION RE-TRIGGER ON THEME TOGGLE
+    function toggleTheme() { 
+        document.documentElement.classList.toggle('light'); 
+        triggerLogo(); // Re-fires the spin animation when theme is changed
+    }
 
     function updateSearch(type) {
         const inputId = type === 'main' ? 'filamentSearchMain' : 'filamentSearchAdd';
