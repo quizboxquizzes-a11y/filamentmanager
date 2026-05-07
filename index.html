@@ -55,9 +55,13 @@
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
 
-        .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; flex-direction: column; gap: 4px;}
-        .tag.missing { border-left: 4px solid var(--danger); }
-        .tag.ready { border-left: 4px solid var(--accent); }
+        /* VISUAL BOX LAYOUT FOR CHECKER */
+        .project-card { background: var(--bg); border: 2px solid var(--accent); border-radius: 16px; padding: 25px; margin-top: 20px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .tag.missing { border-left: 5px solid var(--danger); }
+        .tag.ready { border-left: 5px solid var(--accent); }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 6px; }
@@ -72,6 +76,11 @@
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
+
+        /* BACKUP FOOTER */
+        .backup-footer { max-width: 1100px; margin: 40px auto; display: flex; gap: 10px; justify-content: center; opacity: 0.5; transition: 0.3s; }
+        .backup-footer:hover { opacity: 1; }
+        .btn-small { background: none; border: 1px solid var(--text); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
@@ -124,6 +133,12 @@
     </div>
     <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
     <button class="btn-print" onclick="saveCustomProject()">Save Project</button>
+</div>
+
+<div class="backup-footer">
+    <button class="btn-small" onclick="exportData()">💾 EXPORT BACKUP</button>
+    <button class="btn-small" onclick="document.getElementById('importFile').click()">📂 RESTORE BACKUP</button>
+    <input type="file" id="importFile" style="display:none" onchange="importData(event)">
 </div>
 
 <div class="theme-toggle-container">
@@ -268,19 +283,49 @@
     }
 
     function checkProject(val, name) {
-        const id = val.split(':')[1]; const reqs = getAllProjects()[id]; const totals = getCombinedStock(); let canPrint = true;
-        let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name}</h3>`;
+        const id = val.split(':')[1]; 
+        const allProjs = getAllProjects();
+        const reqs = allProjs[id]; 
+        const totals = getCombinedStock(); 
+        let canPrint = true;
+        let isCustom = !playbookProjects[id];
+
+        let html = `<div class="project-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="margin:0; color:var(--accent);">${name}</h3>
+                            ${isCustom ? `<button onclick="deleteCustomProject('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">DELETE</button>` : ''}
+                        </div>`;
+        
         reqs.forEach(item => {
-            const total = totals[item.f] || 0; if(total < item.g) canPrint = false;
-            html += `<div class="tag ${total < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${total}g / ${item.g}g</div>`;
+            const totalAvailable = totals[item.f] || 0; 
+            const isMissing = totalAvailable < item.g;
+            if(isMissing) canPrint = false;
+            
+            html += `<div class="tag ${isMissing ? 'missing' : 'ready'}">
+                        <span><b>${item.f}</b></span>
+                        <span>${totalAvailable}g / ${item.g}g</span>
+                     </div>`;
         });
-        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print</button>`;
+
+        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 COMMIT TO PRINT</button>`;
+        else html += `<div style="text-align:center; padding:10px; opacity:0.5; font-size:12px;">Not enough stock to print.</div>`;
+
         document.getElementById('result-box').innerHTML = html + `</div>`;
-        forceCloseResults(); document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
+        forceCloseResults(); 
+        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteCustomProject(name) {
+        if(!confirm("Delete this custom project?")) return;
+        let custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+        delete custom[name];
+        localStorage.setItem('customProjects', JSON.stringify(custom));
+        document.getElementById('result-box').innerHTML = "";
+        updateAvailableProjects();
     }
 
     function commitPrint(projId) {
-        if(!confirm("Deduct stock?")) return;
+        if(!confirm("Deduct stock? (Will use scraps first)")) return;
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const reqs = getAllProjects()[projId];
         reqs.forEach(req => {
@@ -295,7 +340,36 @@
         });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
-        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Print logged! Scraps used first.</div>";
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px; font-weight:bold;'>Stock updated! Smallest spools cleared first.</div>";
+    }
+
+    // BACKUP & RESTORE LOGIC
+    function exportData() {
+        const data = {
+            multiSpools: JSON.parse(localStorage.getItem('multiSpools') || "[]"),
+            customProjects: JSON.parse(localStorage.getItem('customProjects') || "{}")
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `filament_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.multiSpools) localStorage.setItem('multiSpools', JSON.stringify(data.multiSpools));
+                if (data.customProjects) localStorage.setItem('customProjects', JSON.stringify(data.customProjects));
+                alert("Restored successfully!");
+                location.reload();
+            } catch (err) { alert("Invalid backup file."); }
+        };
+        reader.readAsText(file);
     }
 
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
