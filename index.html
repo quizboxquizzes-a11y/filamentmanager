@@ -53,7 +53,6 @@
         .avail-item.almost { border: 1px solid var(--warning); background: rgba(255, 215, 0, 0.05); }
 
         .color-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); display: inline-block; }
-        .dot-row { display: flex; gap: 6px; }
         .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); }
     </style>
 </head>
@@ -73,8 +72,8 @@
 </div>
 
 <div class="section">
-    <h2>Inventory Manager</h2>
-    <input id="filamentSearchMain" placeholder="Click to add filament to inventory..." onfocus="updateSearch('main')" oninput="updateSearch('main')">
+    <h2>Inventory Manager (Multi-Spool)</h2>
+    <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch('main')" oninput="updateSearch('main')">
     <div id="results-main" class="search-results"></div>
     <div id="ownedList" class="inventory-grid"></div>
 </div>
@@ -95,16 +94,26 @@
         chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }]
     };
 
-    const filaments = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)"];
-    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#0000ff", "Red": "#ff0000", "Brown": "#5d4037" };
+    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan"];
+    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#0000ff", "Red": "#ff0000", "Brown": "#5d4037", "Ivory": "#fffff0", "Ash": "#b2b2b2", "Tan": "#d2b48c" };
 
     function getFilamentColor(name) {
         for(const [key, val] of Object.entries(filamentColors)) { if(name.includes(key)) return val; }
         return "#888";
     }
 
+    // Helper to sum all spools of a specific filament type
+    function getCombinedStock() {
+        const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        const totals = {};
+        spools.forEach(s => {
+            totals[s.name] = (totals[s.name] || 0) + s.current;
+        });
+        return totals;
+    }
+
     function updateAvailableProjects() {
-        const stock = JSON.parse(localStorage.getItem('stock') || "{}");
+        const totals = getCombinedStock();
         const readyDiv = document.getElementById('readyList');
         const almostDiv = document.getElementById('almostList');
         
@@ -113,11 +122,19 @@
 
         Object.keys(playbookProjects).forEach(key => {
             const reqs = playbookProjects[key];
-            const stats = checkFeasibility(reqs, stock);
-            const data = { name: key.replace(/_/g, ' '), val: "p:"+key, fils: reqs, ...stats };
+            let matchCount = 0;
+            let isReady = true;
             
-            if(stats.isReady) readyArr.push(data);
-            else if(stats.percentage >= 70) almostArr.push(data);
+            reqs.forEach(req => {
+                const totalInStock = totals[req.f] || 0;
+                if (totalInStock >= req.g) matchCount++; else isReady = false;
+            });
+
+            const percentage = (matchCount / reqs.length) * 100;
+            const data = { name: key.replace(/_/g, ' '), val: "p:"+key, fils: reqs, matchCount, totalCount: reqs.length, isReady, percentage };
+            
+            if(isReady) readyArr.push(data);
+            else if(percentage >= 70) almostArr.push(data);
         });
 
         const renderItem = (p, type) => `
@@ -125,7 +142,7 @@
                 <b>${p.name.toUpperCase()}</b>
                 <div style="display:flex; justify-content: space-between; align-items:center; gap:10px;">
                     <small style="opacity:0.6">${p.matchCount}/${p.totalCount}</small>
-                    <div class="dot-row">${p.fils.map(f => `<div class="mini-dot" style="background:${(stock[f.f] && stock[f.f].current >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div>
+                    <div style="display:flex; gap:4px;">${p.fils.map(f => `<div class="mini-dot" style="background:${(totals[f.f] >= f.g) ? getFilamentColor(f.f) : 'transparent'}; border-color:${getFilamentColor(f.f)}"></div>`).join('')}</div>
                 </div>
             </div>`;
 
@@ -133,40 +150,47 @@
         almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>None near completion.</small>";
     }
 
-    function checkFeasibility(reqs, stock) {
-        let matchCount = 0;
-        let isReady = true;
-        reqs.forEach(req => {
-            const current = stock[req.f] ? stock[req.f].current : 0;
-            if (current >= req.g) matchCount++; else isReady = false;
-        });
-        return { isReady, matchCount, totalCount: reqs.length, percentage: (matchCount / reqs.length) * 100 };
+    function addNewSpool(name) {
+        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        spools.push({ id: Date.now(), name: name, current: 1000, max: 1000 });
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
+        renderStock();
+        updateAvailableProjects();
+        forceCloseResults();
     }
 
-    function adjustWeight(f, amount) {
-        let s = JSON.parse(localStorage.getItem('stock') || "{}");
-        if (!s[f]) s[f] = { current: 1000, max: 1000 };
-        s[f].current = parseFloat((s[f].current + amount).toFixed(2));
-        if (amount === -9999 || s[f].current < 0) delete s[f];
-        localStorage.setItem('stock', JSON.stringify(s));
+    function adjustWeight(id, amount) {
+        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        const idx = spools.findIndex(s => s.id === id);
+        if (idx !== -1) {
+            if (amount === -9999) {
+                spools.splice(idx, 1);
+            } else {
+                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
+            }
+        }
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock();
         updateAvailableProjects();
     }
 
     function renderStock() {
-        const s = JSON.parse(localStorage.getItem('stock') || "{}");
+        const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const container = document.getElementById('ownedList');
-        container.innerHTML = Object.keys(s).map(f => `
+        // Sort by name so multi-spools appear together
+        spools.sort((a,b) => a.name.localeCompare(b.name));
+        
+        container.innerHTML = spools.map(s => `
             <div class="stock-item">
-                <button class="delete-btn" onclick="adjustWeight('${f}', -9999)">×</button>
-                <div style="font-size:11px; font-weight:700; opacity:0.7;">${f}</div>
-                <div class="weight-display">${s[f].current}g</div>
-                <div class="progress-container"><div class="progress-bar" style="width:${(s[f].current/1000)*100}%"></div></div>
+                <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
+                <div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden; white-space:nowrap;">${s.name}</div>
+                <div class="weight-display">${s.current}g</div>
+                <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="color-dot" style="background:${getFilamentColor(f)}"></div>
+                    <div class="color-dot" style="background:${getFilamentColor(s.name)}"></div>
                     <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
-                        <button class="weight-btn" onclick="adjustWeight('${f}', -50)">-50g</button>
-                        <button class="weight-btn" onclick="adjustWeight('${f}', 100)">+100g</button>
+                        <button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button>
+                        <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
                     </div>
                 </div>
             </div>`).join('');
@@ -176,7 +200,7 @@
         const q = document.getElementById('filamentSearchMain').value.toLowerCase();
         const res = document.getElementById('results-main');
         res.style.display = 'block';
-        res.innerHTML = filaments.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="adjustWeight('${f}', 0)">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+        res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f.replace(/'/g, "\\'")}')">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
     }
 
     function updateProjSearch() {
@@ -189,31 +213,60 @@
     function checkProject(val, name) {
         const id = val.split(':')[1];
         const reqs = playbookProjects[id];
-        const stock = JSON.parse(localStorage.getItem('stock') || "{}");
+        const totals = getCombinedStock();
         let canPrint = true;
         let html = `<div style="margin-top:20px; padding:20px; background:var(--bg); border-radius:12px; border:2px solid var(--accent);"><h3>${name.toUpperCase()}</h3>`;
+        
         reqs.forEach(item => {
-            const current = stock[item.f] ? stock[item.f].current : 0;
-            if(current < item.g) canPrint = false;
-            html += `<div class="tag ${current < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${current}g / ${item.g}g</div>`;
+            const totalInStock = totals[item.f] || 0;
+            if(totalInStock < item.g) canPrint = false;
+            html += `<div class="tag ${totalInStock < item.g ? 'missing' : 'ready'}"><b>${item.f}</b>: ${totalInStock}g total / ${item.g}g needed</div>`;
         });
-        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print</button>`;
+        
+        if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 Commit to Print (Deduct from Spools)</button>`;
         document.getElementById('result-box').innerHTML = html + `</div>`;
         forceCloseResults();
         document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function commitPrint(id) {
-        if(!confirm("Subtract weights from stock?")) return;
-        let s = JSON.parse(localStorage.getItem('stock') || "{}");
-        playbookProjects[id].forEach(item => { if(s[item.f]) s[item.f].current = Math.max(0, s[item.f].current - item.g); });
-        localStorage.setItem('stock', JSON.stringify(s));
+    function commitPrint(projId) {
+        if(!confirm("Subtract weights from spools?")) return;
+        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        const reqs = playbookProjects[projId];
+
+        reqs.forEach(req => {
+            let needed = req.g;
+            // Find all physical spools of this type and sort by current weight (ascending) 
+            // This way we empty the "scrap" spools first.
+            let relevantSpools = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
+            
+            relevantSpools.forEach(rs => {
+                if (needed <= 0) return;
+                const spoolToUpdate = spools.find(s => s.id === rs.id);
+                if (spoolToUpdate.current >= needed) {
+                    spoolToUpdate.current = parseFloat((spoolToUpdate.current - needed).toFixed(2));
+                    needed = 0;
+                } else {
+                    needed -= spoolToUpdate.current;
+                    spoolToUpdate.current = 0;
+                }
+            });
+        });
+
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
-        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Stock Updated!</div>";
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:10px;'>Stock Deducted! Scraps emptied first.</div>";
     }
 
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
     function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
+
+    // On Load: Convert old single-stock system to multi-spool if necessary
+    if(localStorage.getItem('stock') && !localStorage.getItem('multiSpools')) {
+        const oldStock = JSON.parse(localStorage.getItem('stock'));
+        const newStock = Object.keys(oldStock).map((name, i) => ({ id: i, name, current: oldStock[name].current, max: 1000 }));
+        localStorage.setItem('multiSpools', JSON.stringify(newStock));
+    }
 
     renderStock();
     updateAvailableProjects();
