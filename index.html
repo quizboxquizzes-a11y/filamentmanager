@@ -32,7 +32,7 @@
             100% { transform: rotate(360deg); } 
         }
 
-        .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; max-width: 1100px; margin: 20px auto; box-shadow: var(--shadow); }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; max-width: 1100px; margin: 20px auto; box-shadow: var(--shadow); position: relative; }
         h2 { margin-top: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
         input { width: 100%; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
 
@@ -53,10 +53,14 @@
         .btn-danger:hover { background: var(--danger); color: white; }
 
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
-        .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 100; position: relative; }
+        
+        .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
         
+        .close-search-btn { padding: 10px; background: var(--card); color: var(--danger); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
+        .close-search-btn:hover { background: var(--danger); color: white; }
+
         .chip { display: inline-flex; align-items: center; background: var(--bg); padding: 8px 16px; border-radius: 25px; margin: 6px; border: 1px solid var(--accent); font-size: 13px; font-weight: 600; }
         .tag { padding: 10px; margin: 5px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between;}
         .tag.missing { border-color: var(--danger); color: var(--danger); }
@@ -146,6 +150,7 @@
 
     let tempProj = [];
 
+    // --- Core UI Functions ---
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
         logo.classList.remove('animate-spin');
@@ -157,12 +162,23 @@
         triggerLogoAnimation(); 
     }
 
+    // NEW: Handle ESC key to close results
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "Escape") forceCloseResults();
+    });
+
+    function forceCloseResults() {
+        document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none');
+    }
+
     function closeAllResults(e) {
-        if (!e.target.closest('.section')) {
-            document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none');
+        // Only close if we didn't click an input or the results box itself
+        if (!e.target.closest('input') && !e.target.closest('.search-results')) {
+            forceCloseResults();
         }
     }
 
+    // --- Search & Filtering ---
     function updateSearch(type) {
         const inputId = type === 'main' ? 'filamentSearchMain' : 'filamentSearchAdd';
         const resultsId = type === 'main' ? 'results-main' : 'results-add';
@@ -172,8 +188,12 @@
         res.style.display = 'block';
         const filtered = filaments.filter(f => f.toLowerCase().includes(q));
         
-        res.innerHTML = filtered.map(f => `
+        let html = filtered.map(f => `
             <div class="search-item" onmousedown="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
+        
+        // Add Close Button at bottom
+        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
+        res.innerHTML = html;
     }
 
     function updateProjSearch() {
@@ -185,9 +205,14 @@
         Object.keys(playbookProjects).forEach(k => { if(k.includes(q)) matches.push({name: "Playbook: " + k.replace(/_/g, ' '), val: "p:"+k}); });
         JSON.parse(localStorage.getItem('customProjs') || "[]").forEach(p => { if(p.name.toLowerCase().includes(q)) matches.push({name: "Custom: " + p.name, val: "c:"+p.id}); });
         
-        res.innerHTML = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
+        let html = matches.map(m => `<div class="search-item" onmousedown="checkProject('${m.val}', '${m.name}')">${m.name}</div>`).join('');
+        
+        // Add Close Button at bottom
+        html += `<div class="close-search-btn" onmousedown="forceCloseResults()">Close Results</div>`;
+        res.innerHTML = html;
     }
 
+    // --- Logic & Storage ---
     function checkProject(val, name) {
         const [type, id] = val.split(':');
         const reqs = type === 'p' ? playbookProjects[id] : JSON.parse(localStorage.getItem('customProjs')).find(x => x.id == id).fils;
@@ -211,7 +236,7 @@
         
         html += `</div>`;
         document.getElementById('result-box').innerHTML = html;
-        document.getElementById('results-proj').style.display = 'none';
+        forceCloseResults();
         document.getElementById('projSearchCheck').value = "";
     }
 
@@ -227,7 +252,7 @@
     function addTempChip(f) {
         const grams = prompt(`Weight for ${f} (g):`, "100");
         if(grams) { tempProj.push({f: f, g: parseFloat(grams)}); renderChips(); }
-        document.getElementById('results-add').style.display = 'none';
+        forceCloseResults();
         document.getElementById('filamentSearchAdd').value = "";
     }
 
@@ -252,7 +277,7 @@
         if (amount === -9999 || s[f].current <= 0) delete s[f];
         localStorage.setItem('stock', JSON.stringify(s));
         renderStock();
-        document.getElementById('results-main').style.display = 'none';
+        forceCloseResults();
         document.getElementById('filamentSearchMain').value = "";
     }
 
