@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filament Stock Manager</title>
+
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M30 20 h40 l-10 40 l-10 20 l-10 -20 z' fill='%2300FF7F'/><circle cx='50' cy='85' r='5' fill='%2300FF7F'/></svg>">
+
+    <style>
+        :root {
+            --bg: #1A1A1A; --card: #232323; --border: #2E2E2E; --text: #EAEAEA;
+            --accent: #00FF7F; --danger: #FF4C4C; --shadow: 0 4px 14px rgba(0,0,0,0.35);
+        }
+        :root.light {
+            --bg: #FFFFFF; --card: #F7F7F7; --border: #DDDDDD; --text: #111;
+            --accent: #00B368; --danger: #E53935; --shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+
+        body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; max-width: 1100px; margin: 0 auto; flex-wrap: wrap; gap: 40px; }
+        .logo-container { display: flex; align-items: center; gap: 15px; cursor: pointer; user-select: none; }
+        #logo-svg { width: 48px; height: 48px; overflow: visible; transition: transform 0.3s ease; }
+        
+        /* NEW ANIMATION: PULSE & SPIN */
+        .animate-active { 
+            animation: pulseSpin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            transform-origin: center;
+        }
+        @keyframes pulseSpin { 
+            0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0px var(--accent)); }
+            50% { transform: scale(1.2) rotate(180deg); filter: drop-shadow(0 0 10px var(--accent)); }
+            100% { transform: scale(1) rotate(360deg); filter: drop-shadow(0 0 0px var(--accent)); } 
+        }
+
+        /* LOGIN BUTTONS */
+        [data-netlify-identity-menu] { 
+            display: flex !important; 
+            flex-direction: row !important; 
+            justify-content: flex-end !important;
+            gap: 80px !important; 
+            align-items: center !important;
+            list-style: none !important;
+            padding: 0 !important; 
+            margin: 0 !important; 
+        }
+        [data-netlify-identity-menu] li { 
+            list-style-type: none !important;
+            display: inline-flex !important;
+        }
+        [data-netlify-identity-menu] button, [data-netlify-identity-menu] a {
+            background-color: transparent !important; 
+            color: var(--accent) !important; 
+            padding: 12px 30px !important;
+            border-radius: 12px !important; 
+            font-weight: 800 !important; 
+            text-decoration: none !important;
+            font-size: 14px !important; 
+            border: 2px solid var(--accent) !important; 
+            transition: 0.2s ease !important; 
+            cursor: pointer !important;
+            white-space: nowrap !important;
+        }
+        [data-netlify-identity-menu] button:hover { background: var(--accent) !important; color: #000 !important; }
+
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 24px; max-width: 1100px; margin: 20px auto; box-shadow: var(--shadow); }
+        h2 { margin-top: 0; font-size: 16px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; }
+        input { width: 100%; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-size: 15px; margin-bottom: 12px; box-sizing: border-box; outline: none; }
+
+        .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 15px; }
+        @media (max-width: 900px) { .inventory-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
+
+        .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; }
+        .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
+        .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
+        .weight-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+        .weight-btn { padding: 10px; font-size: 11px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .btn-ui { width: 100%; background: transparent; color: var(--accent); padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 800; border: 2px solid var(--accent); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; margin-top: 10px; }
+        .btn-ui:hover { background: var(--accent); color: #000; }
+
+        .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
+        .search-results { max-height: 250px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 100; position: relative; }
+        .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .chip { display: inline-flex; align-items: center; background: var(--bg); padding: 8px 16px; border-radius: 25px; margin: 6px; border: 1px solid var(--accent); font-size: 13px; font-weight: 600; }
+
+        .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
+        .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
+        .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
+        :root.light .theme-toggle-circle { left: 32px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo-container" onclick="triggerLogo()">
+        <svg id="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="4" opacity="0.1"/>
+            <path id="strand" stroke="var(--accent)" d="M 50 10 A 40 40 0 1 1 49.9 10 L 50 -10" fill="none" stroke-width="6" stroke-linecap="round" />
+        </svg>
+        <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK MANAGER</div>
+    </div>
+    <div data-netlify-identity-menu></div>
+</div>
+
+<div class="section">
+    <h2>Inventory Manager</h2>
+    <input id="filamentSearchMain" placeholder="Type filament name to add..." oninput="updateSearch('main')">
+    <div id="results-main" class="search-results"></div>
+    <div id="ownedList" class="inventory-grid"></div>
+</div>
+
+<div class="section">
+    <h2>Project Checker</h2>
+    <input id="projSearchCheck" placeholder="Search projects..." oninput="updateProjSearch()">
+    <div id="results-proj" class="search-results"></div>
+    <div id="result-box"></div>
+</div>
+
+<div class="section">
+    <h2>Create Custom Project</h2>
+    <input id="newProjName" placeholder="Enter custom project title...">
+    <input id="filamentSearchAdd" placeholder="Search filaments to include..." oninput="updateSearch('add')">
+    <div id="results-add" class="search-results"></div>
+    <div id="chips" style="margin-bottom: 20px;"></div>
+    <button class="btn-ui" onclick="saveProject()">Save Custom Project</button>
+</div>
+
+<div class="theme-toggle-container">
+    <div class="theme-toggle" onclick="toggleTheme()"><div class="theme-toggle-circle"></div></div>
+</div>
+
+<script>
+    const filaments = [
+        "Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Gray (10103)", "Bambu PLA Silver (10102)", 
+        "Bambu PLA Bronze", "Bambu PLA Gold", "Bambu PLA Green (10501)", "Bambu PLA Dark Red", 
+        "Bambu PLA Dark Blue", "Bambu PLA Yellow (10400)", "Bambu PLA Orange (10300)", "Bambu PLA Cyan (10603)", 
+        "Bambu PLA Magenta (10202)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Ash Grey (11102)", 
+        "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Green (11501)", "Bambu PLA Matte Terracotta", 
+        "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Ivory White (11100)", 
+        "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Dark Chocolate (11802)",
+        "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)", "Bambu PLA Matte Yellow (10400)",
+        "Polymaker PLA Jungle Green", "Polymaker PLA Stone Blue"
+    ];
+
+    let tempProj = [];
+
+    function triggerLogo() {
+        const logo = document.getElementById('logo-svg');
+        logo.classList.remove('animate-active');
+        void logo.offsetWidth; // Trigger reflow
+        logo.classList.add('animate-active');
+    }
+
+    function toggleTheme() { document.documentElement.classList.toggle('light'); triggerLogo(); }
+
+    function updateSearch(type) {
+        const inputId = type === 'main' ? 'filamentSearchMain' : 'filamentSearchAdd';
+        const resultsId = type === 'main' ? 'results-main' : 'results-add';
+        const q = document.getElementById(inputId).value.toLowerCase();
+        const res = document.getElementById(resultsId);
+        if(!q) { res.style.display = 'none'; return; }
+        res.style.display = 'block';
+        res.innerHTML = filaments.filter(f => f.toLowerCase().includes(q)).slice(0,10).map(f => `
+            <div class="search-item" onclick="${type === 'main' ? `adjustWeight('${f.replace(/'/g, "\\'")}', 0)` : `addTempChip('${f.replace(/'/g, "\\'")}')` }">${f}</div>`).join('');
+    }
+
+    function addTempChip(f) {
+        const grams = prompt(`Weight for ${f} (g):`, "100");
+        if(grams) { tempProj.push({f: f, g: parseFloat(grams)}); renderChips(); }
+        document.getElementById('results-add').style.display = 'none';
+        document.getElementById('filamentSearchAdd').value = "";
+    }
+
+    function renderChips() {
+        document.getElementById('chips').innerHTML = tempProj.map((p, i) => `<span class="chip">${p.f} (${p.g}g) <b onclick="tempProj.splice(${i},1);renderChips();" style="cursor:pointer;margin-left:10px;color:red">×</b></span>`).join('');
+    }
+
+    function saveProject() {
+        const name = document.getElementById('newProjName').value;
+        if(!name || tempProj.length === 0) return alert("Missing name or filaments");
+        let custom = JSON.parse(localStorage.getItem('customProjs') || "[]");
+        custom.push({id: Date.now(), name: name, fils: [...tempProj]});
+        localStorage.setItem('customProjs', JSON.stringify(custom));
+        tempProj = []; document.getElementById('newProjName').value = ""; renderChips();
+    }
+
+    function adjustWeight(f, amount) {
+        let s = JSON.parse(localStorage.getItem('stock') || "{}");
+        if (!s[f]) s[f] = { current: 1000, max: 1000 };
+        s[f].current = parseFloat((s[f].current + amount).toFixed(2));
+        if (s[f].current <= 0) delete s[f];
+        localStorage.setItem('stock', JSON.stringify(s));
+        renderStock();
+        document.getElementById('results-main').style.display = 'none';
+        document.getElementById('filamentSearchMain').value = "";
+    }
+
+    function renderStock() {
+        const s = JSON.parse(localStorage.getItem('stock') || "{}");
+        const container = document.getElementById('ownedList');
+        container.innerHTML = "";
+        Object.keys(s).forEach(f => {
+            const data = s[f];
+            container.innerHTML += `
+                <div class="stock-item">
+                    <button class="delete-btn" onclick="adjustWeight('${f}', -9999)">×</button>
+                    <div class="stock-info">${f}</div>
+                    <div class="weight-display">${data.current}g</div>
+                    <div class="progress-container"><div class="progress-bar" style="width:${(data.current/data.max)*100}%"></div></div>
+                    <div class="weight-controls">
+                        <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', -50)">-50g</button>
+                        <button class="weight-btn" onclick="adjustWeight('${f.replace(/'/g, "\\'")}', 100)">+100g</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    renderStock();
+    triggerLogo();
+</script>
+</body>
+</html>
