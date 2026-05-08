@@ -46,7 +46,6 @@
 
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; transition: box-shadow 0.3s; }
         
-        /* LOW STOCK ANIMATION */
         .stock-item.low-stock-alert { border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); animation: pulseAlert 2s infinite ease-in-out; }
         @keyframes pulseAlert { 0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); } 50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); } 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); } }
         .low-stock-text { color: var(--warning) !important; }
@@ -183,7 +182,7 @@
 <script>
     let activeFilamentFilter = null;
     const COST_PER_GRAM = 0.02; // £20 per kg
-    const LOW_STOCK_THRESHOLD = 150; // Grams to trigger alert
+    const LOW_STOCK_THRESHOLD = 150; 
 
     function switchScene(sceneId) {
         document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
@@ -341,8 +340,15 @@
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const idx = spools.findIndex(s => s.id === id);
         if (idx !== -1) {
-            if (amount === -9999) spools.splice(idx, 1);
-            else spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
+            if (amount === -9999) {
+                spools.splice(idx, 1);
+            } else {
+                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
+                // AUTO DELETE AT 0
+                if (spools[idx].current <= 0) {
+                    spools.splice(idx, 1);
+                }
+            }
         }
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock();
@@ -451,9 +457,13 @@
                 else { needed -= sUpdate.current; sUpdate.current = 0; }
             });
         });
+
+        // AUTO DELETE EMPTY AFTER PRINT
+        spools = spools.filter(s => s.current > 0);
+
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
-        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px;'>Stock Deducted.</div>";
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px;'>Stock Deducted & Empties Removed.</div>";
     }
 
     function exportData() {
