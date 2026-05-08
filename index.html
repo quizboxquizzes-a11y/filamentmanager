@@ -35,6 +35,10 @@
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
 
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; }
+        .stock-item:hover { border-color: var(--accent); }
+        .stock-clickable { cursor: pointer; transition: opacity 0.2s; }
+        .stock-clickable:hover { opacity: 0.7; }
+        
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
@@ -75,12 +79,14 @@
         .backup-footer { max-width: 1100px; margin: 40px auto; display: flex; gap: 10px; justify-content: center; opacity: 0.5; transition: 0.3s; }
         .backup-footer:hover { opacity: 1; }
         .btn-small { background: none; border: 1px solid var(--text); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        
+        #clear-filter-btn { display: none; background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-left: 10px; vertical-align: middle; }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
 
 <div class="header">
-    <div class="logo-container" onclick="triggerLogoAnimation(); updateAvailableProjects();">
+    <div class="logo-container" onclick="triggerLogoAnimation(); activeFilamentFilter = null; updateAvailableProjects();">
         <svg id="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="4" opacity="0.1"/>
             <circle cx="50" cy="50" r="12" fill="var(--accent)"/>
@@ -96,6 +102,11 @@
 </div>
 
 <div class="section">
+    <div style="display:flex; align-items:center; margin-bottom:15px;">
+        <h2 id="project-header">Project Availability</h2>
+        <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
+    </div>
+    
     <h2>Ready to Print</h2>
     <div id="readyList" class="avail-list"></div>
     
@@ -110,7 +121,7 @@
 </div>
 
 <div class="section">
-    <h2>Inventory Manager</h2>
+    <h2>Inventory Manager <small style="font-size:10px; opacity:0.5; float:right;">Click spool name to filter projects</small></h2>
     <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
     <div id="results-main" class="search-results"></div>
     <div id="ownedList" class="inventory-grid"></div>
@@ -147,6 +158,8 @@
 </div>
 
 <script>
+    let activeFilamentFilter = null;
+
     const playbookProjects = {
         backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
         cribbage: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 285.5 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 182.4 }, { f: "Bambu PLA Matte Dark Red", g: 29.12 }],
@@ -197,6 +210,12 @@
         return {...playbookProjects, ...custom};
     }
 
+    function filterByFilament(name) {
+        activeFilamentFilter = name;
+        updateAvailableProjects();
+        document.querySelector('.header').scrollIntoView({ behavior: 'smooth' });
+    }
+
     function updateAvailableProjects() {
         const totals = getCombinedStock();
         const all = getAllProjects();
@@ -204,11 +223,18 @@
         const almostDiv = document.getElementById('almostList');
         const missingDiv = document.getElementById('missingList');
         const noneDiv = document.getElementById('noneList');
+        const clearBtn = document.getElementById('clear-filter-btn');
+        
+        clearBtn.style.display = activeFilamentFilter ? 'inline-block' : 'none';
         
         let readyArr = [], almostArr = [], missingArr = [], noneArr = [];
 
         Object.keys(all).forEach(key => {
             const reqs = all[key];
+            
+            // Check if this project uses the filtered filament (if filter active)
+            if (activeFilamentFilter && !reqs.some(r => r.f === activeFilamentFilter)) return;
+
             let matchCount = 0;
             let totalStockForProject = 0;
             reqs.forEach(req => { 
@@ -249,10 +275,10 @@
             </div>`;
         };
         
-        readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small style='opacity:0.5'>None ready.</small>";
-        almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>None near completion.</small>";
-        missingDiv.innerHTML = missingArr.length ? missingArr.map(p => renderItem(p, 'missing')).join('') : "<small style='opacity:0.5'>None partially in stock.</small>";
-        noneDiv.innerHTML = noneArr.length ? noneArr.map(p => renderItem(p, 'none')).join('') : "<small style='opacity:0.5'>You own at least something for every project!</small>";
+        readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
+        almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
+        missingDiv.innerHTML = missingArr.length ? missingArr.map(p => renderItem(p, 'missing')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
+        noneDiv.innerHTML = noneArr.length ? noneArr.map(p => renderItem(p, 'none')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
     }
 
     function addCustomInput() {
@@ -300,7 +326,21 @@
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const container = document.getElementById('ownedList');
         spools.sort((a,b) => a.name.localeCompare(b.name));
-        container.innerHTML = spools.map(s => `<div class="stock-item"><button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button><div style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div><div class="weight-display">${s.current}g</div><div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div><div style="display:flex; justify-content:space-between; align-items:center;"><div class="color-dot" style="width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.4); background:${getFilamentColor(s.name)}"></div><div class="weight-controls" style="flex-grow:1; margin-left:10px;"><button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button><button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button></div></div></div>`).join('');
+        container.innerHTML = spools.map(s => `<div class="stock-item">
+            <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
+            <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div>
+            <div class="weight-display">${s.current}g</div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="color-dot stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.4); background:${getFilamentColor(s.name)}"></div>
+                <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
+                    <button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button>
+                    <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
+                </div>
+            </div>
+        </div>`).join('');
     }
 
     function updateSearch() {
