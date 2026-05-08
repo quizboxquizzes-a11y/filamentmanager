@@ -94,7 +94,6 @@
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
 
-        /* Drag & Drop Styling */
         #drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 60px 20px; text-align: center; color: var(--null); transition: 0.3s; cursor: pointer; background: rgba(255,255,255,0.02); }
         #drop-zone.dragover { border-color: var(--accent); background: rgba(0, 255, 127, 0.05); color: var(--accent); }
     </style>
@@ -188,16 +187,14 @@
     const COST_PER_GRAM = 0.02;
     const LOW_STOCK_THRESHOLD = 150;
 
-    // RESTORED PROJECTS
+    // PROJECT NAMES UPDATED TO "Playbook'd: Name"
     const playbookProjects = {
-        backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
-        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
-        sea_battle: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }]
+        "Playbook'd: Backgammon": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
+        "Playbook'd: Chess": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
+        "Playbook'd: Sea Battle": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }]
     };
 
-    // RESTORED FILAMENTS
     const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ash Grey (11102)"];
-    
     const filamentColors = { "Black": "#000000", "White": "#F8F8F8", "Charcoal": "#333333", "Bone": "#D8C9B0", "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ash": "#70757a" };
 
     function switchScene(sceneId) {
@@ -246,12 +243,10 @@
                 <div style="font-size:10px; opacity:0.7;">${s.name}</div>
                 <div class="weight-display ${isLow ? 'low-stock-text' : ''}">${s.current}g</div>
                 <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%; background:${isLow ? 'var(--warning)' : 'var(--accent)'}"></div></div>
-                
                 <div class="weight-controls">
                     <button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button>
                     <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
                 </div>
-
                 <div class="waste-tools">
                     <button class="btn-waste" onclick="adjustWeight(${s.id}, -5)">-5g (PURGE)</button>
                     <button class="btn-waste" onclick="adjustWeight(${s.id}, -15)">-15g (TOWER)</button>
@@ -276,7 +271,6 @@
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
     function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
 
-    // G-CODE DRAG AND DROP HANDLERS
     function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
     function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
     function handleDrop(e) {
@@ -303,16 +297,11 @@
         const stock = getCombinedStock();
         const bestMatch = Object.keys(stock).find(s => s.toLowerCase().includes(type.toLowerCase())) || filamentsList[0];
         const hasEnough = (stock[bestMatch] || 0) >= grams;
-        
         document.getElementById('analyzer-result').innerHTML = `
             <div class="tag ${hasEnough ? 'ready' : 'missing'}">
-                <div>
-                    <b>${name}</b><br>
-                    <small>Requires: ${grams}g of ${bestMatch}</small>
-                </div>
+                <div><b>${name}</b><br><small>Requires: ${grams}g of ${bestMatch}</small></div>
                 ${hasEnough ? `<button class="nav-btn" style="background:var(--accent); color:black;" onclick="deductGCode('${bestMatch}', ${grams})">PRINT & DEDUCT</button>` : `<span style="color:var(--danger)">LOW STOCK</span>`}
-            </div>
-        `;
+            </div>`;
     }
 
     function deductGCode(name, grams) {
@@ -329,11 +318,9 @@
         document.getElementById('analyzer-result').innerHTML = "✅ Stock Updated!";
     }
 
-    // PROJECT AVAILABILITY LOGIC (Restored)
     function updateAvailableProjects() {
         const stock = getCombinedStock();
         const lists = { ready: [], almost: [], missing: [] };
-        
         Object.entries(playbookProjects).forEach(([id, items]) => {
             let totalNeeded = 0, totalAvail = 0;
             items.forEach(req => {
@@ -341,12 +328,11 @@
                 totalAvail += Math.min(req.g, stock[req.f] || 0);
             });
             const pct = totalAvail / totalNeeded;
-            const itemHtml = `<div class="avail-item ${pct >= 1 ? 'ready' : pct >= 0.7 ? 'almost' : 'missing-stock'}" onclick="checkSpecificProject('${id}')">${id.replace('_', ' ')} (${Math.round(pct*100)}%)</div>`;
+            const itemHtml = `<div class="avail-item ${pct >= 1 ? 'ready' : pct >= 0.7 ? 'almost' : 'missing-stock'}" onclick="checkSpecificProject('${id}')">${id} (${Math.round(pct*100)}%)</div>`;
             if (pct >= 1) lists.ready.push(itemHtml);
             else if (pct >= 0.7) lists.almost.push(itemHtml);
             else lists.missing.push(itemHtml);
         });
-
         document.getElementById('readyList').innerHTML = lists.ready.join('');
         document.getElementById('almostList').innerHTML = lists.almost.join('');
         document.getElementById('missingList').innerHTML = lists.missing.join('');
