@@ -16,7 +16,7 @@
         :root.light {
             --bg: #FFFFFF; --card: #F2F2F2; --border: #CCCCCC; --text: #111;
             --accent: #00B368; --danger: #E53935; --warning: #F9A825; --null: #888; --shadow: 0 4px 14px rgba(0,0,0,0.12);
-            --dot-border: rgba(0,0,0,0.3); /* Darker border for light mode visibility */
+            --dot-border: rgba(0,0,0,0.3);
         }
 
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
@@ -48,6 +48,8 @@
         .stock-clickable { cursor: pointer; transition: opacity 0.2s; }
         
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
+        .cost-badge { font-size: 11px; background: rgba(0,255,127,0.1); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
         .weight-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
@@ -76,22 +78,8 @@
         .mini-progress { height: 4px; background: #333; border-radius: 2px; overflow: hidden; width: 100%; }
         .mini-progress-fill { height: 100%; transition: width 0.4s; }
         
-        /* ENHANCED VISIBILITY FOR COLOR DOTS */
-        .mini-dot { 
-            width: 14px; 
-            height: 14px; 
-            border-radius: 50%; 
-            border: 2px solid var(--dot-border); 
-            box-shadow: inset 0 0 3px rgba(0,0,0,0.4); 
-            display: inline-block;
-        }
-        .color-dot-large { 
-            width: 24px; 
-            height: 24px; 
-            border-radius: 50%; 
-            border: 2px solid var(--dot-border); 
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .mini-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--dot-border); box-shadow: inset 0 0 3px rgba(0,0,0,0.4); display: inline-block; }
+        .color-dot-large { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--dot-border); box-shadow: inset 0 0 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2); }
 
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
@@ -188,6 +176,7 @@
 
 <script>
     let activeFilamentFilter = null;
+    const COST_PER_GRAM = 0.02; // £20 per kg
 
     function switchScene(sceneId) {
         document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
@@ -218,24 +207,11 @@
 
     const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Terracotta", "Bambu PLA Matte Dark Chocolate (11802)", "Bambu PLA Matte Yellow (10400)", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)"];
     
-    // ADJUSTED COLORS FOR LIGHT MODE READABILITY (Slightly darker tints)
     const filamentColors = { 
-        "Black": "#000000", 
-        "White": "#F8F8F8", 
-        "Charcoal": "#333333", 
-        "Bone": "#D8C9B0", 
-        "Blue": "#1a73e8", 
-        "Red": "#d93025", 
-        "Brown": "#5d4037", 
-        "Ivory": "#E5E2C5", 
-        "Ash": "#70757a", 
-        "Tan": "#c2a47c", 
-        "Terracotta": "#e2725b", 
-        "Chocolate": "#3e2723", 
-        "Yellow": "#f9ab00", 
-        "Apple": "#79a300", 
-        "Grass": "#2d8a43", 
-        "Mandarin": "#f28500" 
+        "Black": "#000000", "White": "#F8F8F8", "Charcoal": "#333333", "Bone": "#D8C9B0", 
+        "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ivory": "#E5E2C5", 
+        "Ash": "#70757a", "Tan": "#c2a47c", "Terracotta": "#e2725b", "Chocolate": "#3e2723", 
+        "Yellow": "#f9ab00", "Apple": "#79a300", "Grass": "#2d8a43", "Mandarin": "#f28500" 
     };
 
     function triggerLogoAnimation() {
@@ -369,9 +345,14 @@
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const container = document.getElementById('ownedList');
         spools.sort((a,b) => a.name.localeCompare(b.name));
-        container.innerHTML = spools.map(s => `<div class="stock-item">
+        container.innerHTML = spools.map(s => {
+            const spoolVal = (s.current * COST_PER_GRAM).toFixed(2);
+            return `<div class="stock-item">
             <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
-            <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; opacity:0.7; overflow:hidden;">${s.name}</div>
+            <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; opacity:0.7; overflow:hidden; display:flex; justify-content:space-between;">
+                <span>${s.name}</span>
+                <span class="cost-badge">£${spoolVal}</span>
+            </div>
             <div class="weight-display">${s.current}g</div>
             <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -381,7 +362,7 @@
                     <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`}).join('');
     }
 
     function updateSearch() {
@@ -408,15 +389,30 @@
         const reqs = allProjs[id]; 
         const totals = getCombinedStock(); 
         let canPrint = true;
-        let html = `<div class="project-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:var(--accent);">${name}</h3>${parts[0] === 'c' ? `<button onclick="deleteCustomProject('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">DELETE</button>` : ''}</div>`;
+        let totalGrams = 0;
+        
+        reqs.forEach(i => totalGrams += i.g);
+        const totalCost = (totalGrams * COST_PER_GRAM).toFixed(2);
+
+        let html = `<div class="project-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <div>
+                    <h3 style="margin:0; color:var(--accent);">${name}</h3>
+                    <div class="cost-badge" style="margin-top:5px; display:inline-block;">ESTIMATED COST: £${totalCost}</div>
+                </div>
+                ${parts[0] === 'c' ? `<button onclick="deleteCustomProject('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">DELETE</button>` : ''}
+            </div>`;
+            
         reqs.forEach(item => {
             const totalAvailable = totals[item.f] || 0; 
             const isMissing = totalAvailable < item.g;
             if(isMissing) canPrint = false;
             html += `<div class="tag ${isMissing ? 'missing' : 'ready'}"><div style="display:flex; align-items:center; gap:8px;"><div class="mini-dot" style="background:${getFilamentColor(item.f)}"></div><b>${item.f}</b></div><span>${totalAvailable}g / ${item.g}g</span></div>`;
         });
+        
         if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 COMMIT TO PRINT</button>`;
         else html += `<div style="text-align:center; padding:10px; opacity:0.5; font-size:12px;">Insufficient stock.</div>`;
+        
         document.getElementById('result-box').innerHTML = html + `</div>`;
         forceCloseResults(); 
         
