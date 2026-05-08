@@ -48,13 +48,10 @@
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
 
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px; position: relative; transition: box-shadow 0.3s; }
-        
         .stock-item.low-stock-alert { border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
         .low-stock-text { color: var(--warning) !important; }
 
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
-        .cost-badge { font-size: 11px; background: rgba(0,255,127,0.1); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
 
@@ -69,20 +66,12 @@
         .btn-add { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
         
-        .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .tag.missing { border-left: 5px solid var(--danger); }
-        .tag.ready { border-left: 5px solid var(--accent); }
-        .tag.split { border-left: 5px solid var(--warning); }
-
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; width: 220px; }
-        .avail-item.ready { border: 1px solid var(--accent); }
-        .avail-item.almost { border: 1px solid var(--warning); }
-        .avail-item.missing-stock { border: 1px solid var(--danger); }
-        .avail-item.no-stock { border: 1px solid var(--null); opacity: 0.6; filter: grayscale(1); }
+        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; width: 220px; transition: 0.2s; }
+        .avail-item:hover { border-color: var(--accent); transform: translateY(-2px); }
 
-        .mini-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--dot-border); display: inline-block; }
-        .color-dot-large { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--dot-border); }
+        /* Prevent dropdown cut-off in Create Scene */
+        #scene-create .section { padding-bottom: 100px; }
 
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
@@ -120,7 +109,7 @@
     <div class="section">
         <div style="display:flex; align-items:center; margin-bottom:15px;">
             <h2 id="project-header">Project Availability</h2>
-            <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
+            <button id="clear-filter-btn" onclick="clearFilter()">CLEAR FILTER</button>
         </div>
         <h2>Ready to Print</h2>
         <div id="readyList" class="avail-list"></div>
@@ -129,19 +118,12 @@
         <h2 style="margin-top: 25px; color: var(--danger);">Missing Materials</h2>
         <div id="missingList" class="avail-list"></div>
     </div>
-
-    <div class="section">
-        <h2>Project Checker</h2>
-        <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
-        <div id="results-proj" class="search-results"></div>
-        <div id="result-box"></div>
-    </div>
 </div>
 
 <div id="scene-inventory" class="scene">
     <div class="section">
         <h2>Inventory Manager</h2>
-        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
+        <input id="filamentSearchMain" placeholder="Search to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
         <div id="ownedList" class="inventory-grid"></div>
     </div>
@@ -152,12 +134,8 @@
         <h2>Create Custom Project</h2>
         <input id="customProjName" placeholder="Project Name">
         <div id="customInputs">
-            <div style="display:flex; gap:10px;">
-                <select class="custom-fil-select"></select>
-                <input type="number" class="custom-fil-grams" placeholder="Grams">
             </div>
-        </div>
-        <button class="btn-add" onclick="addCustomInput()">+ Add Color</button>
+        <button class="btn-add" onclick="addCustomInput()">+ Add Material</button>
         <button class="btn-print" onclick="saveCustomProject()">Save Project</button>
     </div>
 </div>
@@ -168,18 +146,15 @@
 
 <script>
     let activeFilamentFilter = null;
-    const COST_PER_GRAM = 0.02;
     const LOW_STOCK_THRESHOLD = 150;
 
-    const playbookProjects = {
-        backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
-        chess: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
-        sea_battle: [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }]
-    };
-
     const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ash Grey (11102)"];
-    
-    const filamentColors = { "Black": "#000000", "White": "#F8F8F8", "Charcoal": "#333333", "Bone": "#D8C9B0", "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ash": "#70757a" };
+
+    const playbookProjects = {
+        "Backgammon Set": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
+        "Chess Set": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
+        "Sea Battle": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }]
+    };
 
     function switchScene(sceneId) {
         document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
@@ -187,6 +162,10 @@
         document.getElementById('scene-' + sceneId).classList.add('active');
         document.getElementById('btn-' + sceneId).classList.add('active');
         if(sceneId === 'projects') updateAvailableProjects();
+        if(sceneId === 'create') { 
+            document.getElementById('customInputs').innerHTML = '';
+            addCustomInput(); 
+        }
         window.scrollTo(0,0);
     }
 
@@ -195,25 +174,12 @@
         localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
     }
 
+    // --- INVENTORY LOGIC ---
     function getCombinedStock() {
         const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const totals = {};
         spools.forEach(s => { totals[s.name] = (totals[s.name] || 0) + s.current; });
         return totals;
-    }
-
-    function adjustWeight(id, amount) {
-        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        const idx = spools.findIndex(s => s.id === id);
-        if (idx !== -1) {
-            if (amount === -9999) spools.splice(idx, 1);
-            else {
-                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
-                if (spools[idx].current <= 0) spools.splice(idx, 1);
-            }
-        }
-        localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock();
     }
 
     function renderStock() {
@@ -224,24 +190,33 @@
             const isLow = s.current < LOW_STOCK_THRESHOLD;
             return `<div class="stock-item ${isLow ? 'low-stock-alert' : ''}">
                 <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
-                <div style="font-size:10px; opacity:0.7;">${s.name}</div>
+                <div style="font-size:10px; opacity:0.7; cursor:pointer;" onclick="filterByFilament('${s.name}')">${s.name}</div>
                 <div class="weight-display ${isLow ? 'low-stock-text' : ''}">${s.current}g</div>
                 <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%; background:${isLow ? 'var(--warning)' : 'var(--accent)'}"></div></div>
-                
                 <div class="weight-controls">
                     <button class="weight-btn" onclick="adjustWeight(${s.id}, -50)">-50g</button>
                     <button class="weight-btn" onclick="adjustWeight(${s.id}, 100)">+100g</button>
                 </div>
-
                 <div class="waste-tools">
                     <button class="btn-waste" onclick="adjustWeight(${s.id}, -5)">-5g (PURGE)</button>
-                    <button class="btn-waste" onclick="adjustWeight(${s.id}, -15)">-15g (TOWER)</button>
                     <button class="btn-waste" style="background:rgba(255,76,76,0.3)" onclick="adjustWeight(${s.id}, -50)">-50g (FAIL)</button>
                 </div>
             </div>`}).join('');
     }
 
-    // Logic for search, projects, and theme initialization (Same as previous stable build)
+    function adjustWeight(id, amount) {
+        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        const idx = spools.findIndex(s => s.id === id);
+        if (idx !== -1) {
+            if (amount === -9999) spools.splice(idx, 1);
+            else {
+                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
+            }
+        }
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
+        renderStock();
+    }
+
     function updateSearch() {
         const q = document.getElementById('filamentSearchMain').value.toLowerCase();
         const res = document.getElementById('results-main'); res.style.display = 'block';
@@ -253,12 +228,137 @@
         spools.push({ id: Date.now(), name, current: 1000, max: 1000 });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); forceCloseResults();
+        document.getElementById('filamentSearchMain').value = '';
     }
 
+    // --- PROJECT LOGIC ---
+    function updateAvailableProjects() {
+        const stock = getCombinedStock();
+        const custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+        const all = { ...playbookProjects, ...custom };
+        
+        const lists = { ready: [], almost: [], missing: [] };
+        const filterBtn = document.getElementById('clear-filter-btn');
+        filterBtn.style.display = activeFilamentFilter ? 'block' : 'none';
+
+        Object.keys(all).forEach(name => {
+            const reqs = all[name];
+            if(activeFilamentFilter && !reqs.some(r => r.f === activeFilamentFilter)) return;
+
+            let totalReq = 0, totalHave = 0;
+            reqs.forEach(r => {
+                totalReq += r.g;
+                totalHave += Math.min(r.g, stock[r.f] || 0);
+            });
+
+            const pct = totalHave / totalReq;
+            const html = `<div class="avail-item" onclick="confirmPrint('${name.replace(/'/g, "\\'")}')">
+                <div style="font-weight:bold">${name}</div>
+                <div style="font-size:11px; opacity:0.6">${totalReq}g required</div>
+            </div>`;
+
+            if (pct >= 1) lists.ready.push(html);
+            else if (pct >= 0.7) lists.almost.push(html);
+            else lists.missing.push(html);
+        });
+
+        document.getElementById('readyList').innerHTML = lists.ready.join('');
+        document.getElementById('almostList').innerHTML = lists.almost.join('');
+        document.getElementById('missingList').innerHTML = lists.missing.join('');
+    }
+
+    function confirmPrint(name) {
+        if(confirm(`Deduct grams for ${name}?`)) {
+            const custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+            const all = { ...playbookProjects, ...custom };
+            const reqs = all[name];
+            let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+
+            reqs.forEach(r => {
+                let needed = r.g;
+                for(let s of spools) {
+                    if(s.name === r.f && needed > 0) {
+                        let take = Math.min(s.current, needed);
+                        s.current -= take;
+                        needed -= take;
+                    }
+                }
+            });
+            localStorage.setItem('multiSpools', JSON.stringify(spools));
+            triggerLogoAnimation();
+            renderStock();
+            updateAvailableProjects();
+        }
+    }
+
+    function filterByFilament(name) {
+        activeFilamentFilter = name;
+        switchScene('projects');
+    }
+
+    function clearFilter() {
+        activeFilamentFilter = null;
+        updateAvailableProjects();
+    }
+
+    // --- CUSTOM CREATE LOGIC ---
+    function addCustomInput() {
+        const container = document.getElementById('customInputs');
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.gap = '10px';
+        
+        const sel = document.createElement('select');
+        sel.className = 'custom-fil-select';
+        filamentsList.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f; opt.textContent = f;
+            sel.appendChild(opt);
+        });
+
+        div.innerHTML = `
+            <input type="number" class="custom-fil-grams" placeholder="Grams" style="flex:1">
+        `;
+        div.insertBefore(sel, div.firstChild);
+        container.appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function saveCustomProject() {
+        const name = document.getElementById('customProjName').value;
+        if(!name) return alert("Project Name required");
+        
+        const rows = document.querySelectorAll('#customInputs > div');
+        const reqs = [];
+        rows.forEach(row => {
+            const f = row.querySelector('select').value;
+            const g = parseFloat(row.querySelector('input').value);
+            if(f && g) reqs.push({ f, g });
+        });
+
+        const custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
+        custom[name] = reqs;
+        localStorage.setItem('customProjects', JSON.stringify(custom));
+        
+        document.getElementById('customProjName').value = '';
+        switchScene('projects');
+    }
+
+    // --- UTILS ---
     function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
     function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
+    function triggerLogoAnimation() {
+        const logo = document.getElementById('logo-svg');
+        logo.classList.remove('animate-spin');
+        void logo.offsetWidth;
+        logo.classList.add('animate-spin');
+    }
+
+    // Load Initial State
     if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
     renderStock();
+    updateAvailableProjects();
 </script>
+
 </body>
 </html>
