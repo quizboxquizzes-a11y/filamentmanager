@@ -11,10 +11,12 @@
         :root {
             --bg: #1A1A1A; --card: #232323; --border: #2E2E2E; --text: #EAEAEA;
             --accent: #00FF7F; --danger: #FF4C4C; --warning: #FFD700; --null: #666; --shadow: 0 4px 14px rgba(0,0,0,0.35);
+            --dot-border: rgba(255,255,255,0.8);
         }
         :root.light {
-            --bg: #FFFFFF; --card: #F7F7F7; --border: #DDDDDD; --text: #111;
+            --bg: #FFFFFF; --card: #F2F2F2; --border: #CCCCCC; --text: #111;
             --accent: #00B368; --danger: #E53935; --warning: #F9A825; --null: #888; --shadow: 0 4px 14px rgba(0,0,0,0.12);
+            --dot-border: rgba(0,0,0,0.3); /* Darker border for light mode visibility */
         }
 
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
@@ -74,9 +76,22 @@
         .mini-progress { height: 4px; background: #333; border-radius: 2px; overflow: hidden; width: 100%; }
         .mini-progress-fill { height: 100%; transition: width 0.4s; }
         
-        /* UPDATED COLOR DOTS */
-        .mini-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-        .color-dot-large { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 6px rgba(0,0,0,0.5); }
+        /* ENHANCED VISIBILITY FOR COLOR DOTS */
+        .mini-dot { 
+            width: 14px; 
+            height: 14px; 
+            border-radius: 50%; 
+            border: 2px solid var(--dot-border); 
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.4); 
+            display: inline-block;
+        }
+        .color-dot-large { 
+            width: 24px; 
+            height: 24px; 
+            border-radius: 50%; 
+            border: 2px solid var(--dot-border); 
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+        }
 
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
@@ -202,7 +217,26 @@
     };
 
     const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Terracotta", "Bambu PLA Matte Dark Chocolate (11802)", "Bambu PLA Matte Yellow (10400)", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)"];
-    const filamentColors = { "Black": "#0a0a0a", "White": "#ffffff", "Charcoal": "#2b2b2b", "Bone": "#e3dac9", "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ivory": "#fffce1", "Ash": "#70757a", "Tan": "#d2b48c", "Terracotta": "#e2725b", "Chocolate": "#3e2723", "Yellow": "#f9ab00", "Apple": "#8db600", "Grass": "#34a853", "Mandarin": "#f28500" };
+    
+    // ADJUSTED COLORS FOR LIGHT MODE READABILITY (Slightly darker tints)
+    const filamentColors = { 
+        "Black": "#000000", 
+        "White": "#F8F8F8", 
+        "Charcoal": "#333333", 
+        "Bone": "#D8C9B0", 
+        "Blue": "#1a73e8", 
+        "Red": "#d93025", 
+        "Brown": "#5d4037", 
+        "Ivory": "#E5E2C5", 
+        "Ash": "#70757a", 
+        "Tan": "#c2a47c", 
+        "Terracotta": "#e2725b", 
+        "Chocolate": "#3e2723", 
+        "Yellow": "#f9ab00", 
+        "Apple": "#79a300", 
+        "Grass": "#2d8a43", 
+        "Mandarin": "#f28500" 
+    };
 
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
@@ -386,7 +420,6 @@
         document.getElementById('result-box').innerHTML = html + `</div>`;
         forceCloseResults(); 
         
-        // AUTO SCROLL
         setTimeout(() => { document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
     }
 
