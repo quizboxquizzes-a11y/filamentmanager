@@ -44,7 +44,13 @@
         @media (max-width: 900px) { .inventory-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
 
-        .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; }
+        .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; transition: box-shadow 0.3s; }
+        
+        /* LOW STOCK ANIMATION */
+        .stock-item.low-stock-alert { border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); animation: pulseAlert 2s infinite ease-in-out; }
+        @keyframes pulseAlert { 0% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); } 50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); } 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.1); } }
+        .low-stock-text { color: var(--warning) !important; }
+
         .stock-clickable { cursor: pointer; transition: opacity 0.2s; }
         
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
@@ -177,6 +183,7 @@
 <script>
     let activeFilamentFilter = null;
     const COST_PER_GRAM = 0.02; // £20 per kg
+    const LOW_STOCK_THRESHOLD = 150; // Grams to trigger alert
 
     function switchScene(sceneId) {
         document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
@@ -347,14 +354,16 @@
         spools.sort((a,b) => a.name.localeCompare(b.name));
         container.innerHTML = spools.map(s => {
             const spoolVal = (s.current * COST_PER_GRAM).toFixed(2);
-            return `<div class="stock-item">
+            const isLow = s.current < LOW_STOCK_THRESHOLD;
+            
+            return `<div class="stock-item ${isLow ? 'low-stock-alert' : ''}">
             <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
             <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; opacity:0.7; overflow:hidden; display:flex; justify-content:space-between;">
                 <span>${s.name}</span>
                 <span class="cost-badge">£${spoolVal}</span>
             </div>
-            <div class="weight-display">${s.current}g</div>
-            <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
+            <div class="weight-display ${isLow ? 'low-stock-text' : ''}">${s.current}g</div>
+            <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%; background:${isLow ? 'var(--warning)' : 'var(--accent)'}"></div></div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="color-dot-large stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="background:${getFilamentColor(s.name)}"></div>
                 <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
