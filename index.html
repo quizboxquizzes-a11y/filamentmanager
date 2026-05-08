@@ -48,13 +48,10 @@
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
 
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px; position: relative; transition: box-shadow 0.3s; }
-        
         .stock-item.low-stock-alert { border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
         .low-stock-text { color: var(--warning) !important; }
 
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
-        .cost-badge { font-size: 11px; background: rgba(0,255,127,0.1); color: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--accent); transition: width 0.6s ease; }
 
@@ -72,25 +69,19 @@
         .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
         .tag.missing { border-left: 5px solid var(--danger); }
         .tag.ready { border-left: 5px solid var(--accent); }
-        .tag.split { border-left: 5px solid var(--warning); }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; width: 220px; }
         .avail-item.ready { border: 1px solid var(--accent); }
         .avail-item.almost { border: 1px solid var(--warning); }
         .avail-item.missing-stock { border: 1px solid var(--danger); }
-        .avail-item.no-stock { border: 1px solid var(--null); opacity: 0.6; filter: grayscale(1); }
-
-        .mini-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--dot-border); display: inline-block; }
-        .color-dot-large { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--dot-border); }
 
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
 
-        #clear-filter-btn { display: none; background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-left: 10px; }
-        .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .search-results { max-height: 350px; overflow-y: auto; background: var(--bg); border: 2px solid var(--accent); border-radius: 10px; margin-bottom: 15px; display: none; z-index: 1000; position: relative; }
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
 
@@ -122,23 +113,12 @@
 
 <div id="scene-projects" class="scene active">
     <div class="section">
-        <div style="display:flex; align-items:center; margin-bottom:15px;">
-            <h2 id="project-header">Project Availability</h2>
-            <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
-        </div>
         <h2>Ready to Print</h2>
         <div id="readyList" class="avail-list"></div>
         <h2 style="margin-top: 25px; color: var(--warning);">Almost Ready (70%+)</h2>
         <div id="almostList" class="avail-list"></div>
         <h2 style="margin-top: 25px; color: var(--danger);">Missing Materials</h2>
         <div id="missingList" class="avail-list"></div>
-    </div>
-
-    <div class="section">
-        <h2>Project Checker</h2>
-        <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
-        <div id="results-proj" class="search-results"></div>
-        <div id="result-box"></div>
     </div>
 </div>
 
@@ -157,7 +137,7 @@
 <div id="scene-inventory" class="scene">
     <div class="section">
         <h2>Inventory Manager</h2>
-        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
+        <input id="filamentSearchMain" placeholder="Search filaments to add spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
         <div id="ownedList" class="inventory-grid"></div>
     </div>
@@ -184,25 +164,34 @@
 
 <script>
     let activeFilamentFilter = null;
-    const COST_PER_GRAM = 0.02;
     const LOW_STOCK_THRESHOLD = 150;
 
-    // PROJECT NAMES UPDATED TO "Playbook'd: Name"
+    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Terracotta", "Bambu PLA Matte Dark Chocolate (11802)", "Bambu PLA Matte Yellow (10400)", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)"];
+
     const playbookProjects = {
         "Playbook'd: Backgammon": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
+        "Playbook'd: Cribbage": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 285.5 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 182.4 }, { f: "Bambu PLA Matte Dark Red", g: 29.12 }],
+        "Playbook'd: Hangman": [{ f: "Bambu PLA Matte Charcoal (11101)", g: 410 }, { f: "Bambu PLA Matte Desert Tan", g: 240.5 }, { f: "Bambu PLA Matte Bone White", g: 88.03 }],
         "Playbook'd: Chess": [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 320 }, { f: "Bambu PLA Matte Bone White", g: 320 }],
-        "Playbook'd: Sea Battle": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }]
+        "Playbook'd: Sea Battle": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 310 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 215 }, { f: "Bambu PLA Matte Dark Red", g: 31 }, { f: "Bambu PLA Matte Bone White", g: 25 }],
+        "Playbook'd: Mancala": [{ f: "Bambu PLA Matte Terracotta", g: 280 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 90 }, { f: "Bambu PLA Matte Bone White", g: 75 }],
+        "Playbook'd: Crosswords": [{ f: "Bambu PLA Matte Dark Chocolate (11802)", g: 240 }, { f: "Bambu PLA Matte Desert Tan", g: 110 }, { f: "Bambu PLA Matte Bone White", g: 80 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 40 }],
+        "Playbook'd: Four in a Row": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 210 }, { f: "Bambu PLA Matte Dark Red", g: 145 }, { f: "Bambu PLA Matte Yellow (10400)", g: 145 }],
+        "Playbook'd: Checkers": [{ f: "Bambu PLA Matte Charcoal (11101)", g: 240 }, { f: "Bambu PLA Matte Bone White", g: 240 }, { f: "Bambu PLA Matte Dark Red", g: 50 }],
+        "Playbook'd: Reversi": [{ f: "Bambu PLA Matte Apple Green (11502)", g: 260 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 120 }, { f: "Bambu PLA Matte Bone White", g: 120 }],
+        "Playbook'd: Snakes and Ladders": [{ f: "Bambu PLA Matte Grass Green", g: 290 }, { f: "Bambu PLA Matte Ivory White (11100)", g: 160 }, { f: "Bambu PLA Matte Mandarin Orange (11300)", g: 40 }],
+        "Playbook'd: Settlers Storage": [{ f: "Bambu PLA Matte Terracotta", g: 380 }, { f: "Bambu PLA Matte Bone White", g: 110 }],
+        "Playbook'd: Sling Puck": [{ f: "Bambu PLA Matte Dark Green (11501)", g: 310 }, { f: "Bambu PLA Matte Bone White", g: 90 }],
+        "Playbook'd: Shut the Box": [{ f: "Bambu PLA Matte Terracotta", g: 275 }, { f: "Bambu PLA Matte Charcoal (11101)", g: 115 }, { f: "Bambu PLA Matte Bone White", g: 30 }],
+        "Playbook'd: Hook and Ring": [{ f: "Bambu PLA Matte Dark Blue (11602)", g: 240 }, { f: "Bambu PLA Matte Ash Grey (11102)", g: 120 }, { f: "Bambu PLA Matte Dark Red", g: 40 }]
     };
 
-    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ash Grey (11102)"];
-    const filamentColors = { "Black": "#000000", "White": "#F8F8F8", "Charcoal": "#333333", "Bone": "#D8C9B0", "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ash": "#70757a" };
-
-    function switchScene(sceneId) {
+    function switchScene(id) {
         document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('scene-' + sceneId).classList.add('active');
-        document.getElementById('btn-' + sceneId).classList.add('active');
-        if(sceneId === 'projects') updateAvailableProjects();
+        document.getElementById('scene-' + id).classList.add('active');
+        document.getElementById('btn-' + id).classList.add('active');
+        if(id === 'projects') updateAvailableProjects();
         window.scrollTo(0,0);
     }
 
@@ -216,20 +205,6 @@
         const totals = {};
         spools.forEach(s => { totals[s.name] = (totals[s.name] || 0) + s.current; });
         return totals;
-    }
-
-    function adjustWeight(id, amount) {
-        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        const idx = spools.findIndex(s => s.id === id);
-        if (idx !== -1) {
-            if (amount === -9999) spools.splice(idx, 1);
-            else {
-                spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
-                if (spools[idx].current <= 0) spools.splice(idx, 1);
-            }
-        }
-        localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock();
     }
 
     function renderStock() {
@@ -249,73 +224,20 @@
                 </div>
                 <div class="waste-tools">
                     <button class="btn-waste" onclick="adjustWeight(${s.id}, -5)">-5g (PURGE)</button>
-                    <button class="btn-waste" onclick="adjustWeight(${s.id}, -15)">-15g (TOWER)</button>
-                    <button class="btn-waste" style="background:rgba(255,76,76,0.3)" onclick="adjustWeight(${s.id}, -50)">-50g (FAIL)</button>
+                    <button class="btn-waste" onclick="adjustWeight(${s.id}, -50)">-50g (FAIL)</button>
                 </div>
             </div>`}).join('');
     }
 
-    function updateSearch() {
-        const q = document.getElementById('filamentSearchMain').value.toLowerCase();
-        const res = document.getElementById('results-main'); res.style.display = 'block';
-        res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f.replace(/'/g, "\\'")}')">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
-    }
-
-    function addNewSpool(name) {
+    function adjustWeight(id, amount) {
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        spools.push({ id: Date.now(), name, current: 1000, max: 1000 });
-        localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock(); forceCloseResults();
-    }
-
-    function forceCloseResults() { document.querySelectorAll('.search-results').forEach(r => r.style.display = 'none'); }
-    function closeAllResults(e) { if (!e.target.closest('input') && !e.target.closest('.search-results')) forceCloseResults(); }
-
-    function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
-    function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
-    function handleDrop(e) {
-        e.preventDefault();
-        document.getElementById('drop-zone').classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file && (file.name.endsWith('.gcode') || file.name.endsWith('.3mf'))) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const text = event.target.result;
-                const weightMatch = text.match(/filament used \[g\]\s*=\s*([\d.]+)/i) || text.match(/; filament used: ([\d.]+)g/i);
-                const typeMatch = text.match(/filament_type\s*=\s*(\w+)/i) || text.match(/; filament type: (\w+)/i);
-                if (weightMatch) {
-                    const grams = parseFloat(weightMatch[1]);
-                    const type = typeMatch ? typeMatch[1] : "PLA";
-                    processAnalyzedProject(file.name, grams, type);
-                } else { alert("Could not detect filament data in this file."); }
-            };
-            reader.readAsText(file.slice(0, 100000));
+        const idx = spools.findIndex(s => s.id === id);
+        if (idx !== -1) {
+            if (amount === -9999) spools.splice(idx, 1);
+            else spools[idx].current = Math.max(0, spools[idx].current + amount);
         }
-    }
-
-    function processAnalyzedProject(name, grams, type) {
-        const stock = getCombinedStock();
-        const bestMatch = Object.keys(stock).find(s => s.toLowerCase().includes(type.toLowerCase())) || filamentsList[0];
-        const hasEnough = (stock[bestMatch] || 0) >= grams;
-        document.getElementById('analyzer-result').innerHTML = `
-            <div class="tag ${hasEnough ? 'ready' : 'missing'}">
-                <div><b>${name}</b><br><small>Requires: ${grams}g of ${bestMatch}</small></div>
-                ${hasEnough ? `<button class="nav-btn" style="background:var(--accent); color:black;" onclick="deductGCode('${bestMatch}', ${grams})">PRINT & DEDUCT</button>` : `<span style="color:var(--danger)">LOW STOCK</span>`}
-            </div>`;
-    }
-
-    function deductGCode(name, grams) {
-        if(!confirm(`Print confirmed. Deduct ${grams}g from ${name}?`)) return;
-        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
-        let remaining = grams;
-        spools.filter(s => s.name === name).sort((a,b) => a.current - b.current).forEach(s => {
-            if (remaining <= 0) return;
-            if (s.current >= remaining) { s.current -= remaining; remaining = 0; }
-            else { remaining -= s.current; s.current = 0; }
-        });
-        localStorage.setItem('multiSpools', JSON.stringify(spools.filter(s => s.current > 0)));
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock();
-        document.getElementById('analyzer-result').innerHTML = "✅ Stock Updated!";
     }
 
     function updateAvailableProjects() {
@@ -328,7 +250,7 @@
                 totalAvail += Math.min(req.g, stock[req.f] || 0);
             });
             const pct = totalAvail / totalNeeded;
-            const itemHtml = `<div class="avail-item ${pct >= 1 ? 'ready' : pct >= 0.7 ? 'almost' : 'missing-stock'}" onclick="checkSpecificProject('${id}')">${id} (${Math.round(pct*100)}%)</div>`;
+            const itemHtml = `<div class="avail-item ${pct >= 1 ? 'ready' : pct >= 0.7 ? 'almost' : 'missing-stock'}">${id} (${Math.round(pct*100)}%)</div>`;
             if (pct >= 1) lists.ready.push(itemHtml);
             else if (pct >= 0.7) lists.almost.push(itemHtml);
             else lists.missing.push(itemHtml);
@@ -338,7 +260,42 @@
         document.getElementById('missingList').innerHTML = lists.missing.join('');
     }
 
+    function updateSearch() {
+        const q = document.getElementById('filamentSearchMain').value.toLowerCase();
+        const res = document.getElementById('results-main'); res.style.display = 'block';
+        res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f}')">${f}</div>`).join('');
+    }
+
+    function addNewSpool(name) {
+        let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
+        spools.push({ id: Date.now(), name, current: 1000, max: 1000 });
+        localStorage.setItem('multiSpools', JSON.stringify(spools));
+        renderStock(); document.getElementById('results-main').style.display = 'none';
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const text = event.target.result;
+            const weightMatch = text.match(/filament used \[g\]\s*=\s*([\d.]+)/i) || text.match(/; filament used: ([\d.]+)g/i);
+            if (weightMatch) {
+                const grams = parseFloat(weightMatch[1]);
+                document.getElementById('analyzer-result').innerHTML = `<div class="tag ready">Detected: ${grams}g needed. Check Inventory to confirm stock.</div>`;
+            }
+        };
+        reader.readAsText(file.slice(0, 100000));
+    }
+
+    function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+    function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
+    function closeAllResults(e) { if (!e.target.closest('input')) document.getElementById('results-main').style.display = 'none'; }
+    function triggerLogoAnimation() { document.getElementById('logo-svg').classList.add('animate-spin'); setTimeout(()=>document.getElementById('logo-svg').classList.remove('animate-spin'), 700); }
+
+    // Init
     if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
+    document.querySelector('.custom-fil-select').innerHTML = filamentsList.map(f => `<option value="${f}">${f}</option>`).join('');
     renderStock();
     updateAvailableProjects();
 </script>
