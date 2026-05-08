@@ -19,6 +19,16 @@
 
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
         
+        /* Scene Management */
+        .scene { display: none; }
+        .scene.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Nav Bar */
+        .nav-bar { display: flex; justify-content: center; gap: 10px; margin: 0 auto 20px auto; max-width: 1100px; padding: 10px 0; }
+        .nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .nav-btn.active { border-color: var(--accent); color: var(--accent); }
+
         .header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; max-width: 1100px; margin: 0 auto; }
         .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
         #logo-svg { width: 48px; height: 48px; overflow: visible; }
@@ -35,9 +45,7 @@
         @media (max-width: 600px) { .inventory-grid { grid-template-columns: 1fr; } }
 
         .stock-item { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; position: relative; }
-        .stock-item:hover { border-color: var(--accent); }
         .stock-clickable { cursor: pointer; transition: opacity 0.2s; }
-        .stock-clickable:hover { opacity: 0.7; }
         
         .weight-display { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
         .progress-container { width: 100%; height: 7px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
@@ -53,15 +61,13 @@
         .search-item { padding: 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 14px; }
         .search-item:hover { background: var(--card); color: var(--accent); }
 
-        .project-card { background: var(--bg); border: 2px solid var(--accent); border-radius: 16px; padding: 25px; margin-top: 20px; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        .project-card { background: var(--bg); border: 2px solid var(--accent); border-radius: 16px; padding: 25px; margin-top: 20px; }
         .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
         .tag.missing { border-left: 5px solid var(--danger); }
         .tag.ready { border-left: 5px solid var(--accent); }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 8px; width: 220px; position: relative; }
+        .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; width: 220px; }
         .avail-item.ready { border: 1px solid var(--accent); }
         .avail-item.almost { border: 1px solid var(--warning); }
         .avail-item.missing-stock { border: 1px solid var(--danger); }
@@ -69,24 +75,23 @@
 
         .mini-progress { height: 4px; background: #333; border-radius: 2px; overflow: hidden; width: 100%; }
         .mini-progress-fill { height: 100%; transition: width 0.4s; }
-
         .mini-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3); }
+
         .theme-toggle-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; }
         .theme-toggle { width: 60px; height: 32px; background: var(--border); border-radius: 30px; cursor: pointer; position: relative; }
         .theme-toggle-circle { width: 24px; height: 24px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; left: 4px; transition: 0.4s; }
         :root.light .theme-toggle-circle { left: 32px; }
 
-        .backup-footer { max-width: 1100px; margin: 40px auto; display: flex; gap: 10px; justify-content: center; opacity: 0.5; transition: 0.3s; }
-        .backup-footer:hover { opacity: 1; }
+        .backup-footer { max-width: 1100px; margin: 40px auto; display: flex; gap: 10px; justify-content: center; opacity: 0.5; }
         .btn-small { background: none; border: 1px solid var(--text); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
         
-        #clear-filter-btn { display: none; background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-left: 10px; vertical-align: middle; }
+        #clear-filter-btn { display: none; background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-left: 10px; }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
 
 <div class="header">
-    <div class="logo-container" onclick="triggerLogoAnimation(); activeFilamentFilter = null; updateAvailableProjects();">
+    <div class="logo-container" onclick="triggerLogoAnimation(); switchScene('projects');">
         <svg id="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="4" opacity="0.1"/>
             <circle cx="50" cy="50" r="12" fill="var(--accent)"/>
@@ -95,56 +100,64 @@
                 <line x1="20" y1="68" x2="38" y2="58"/>
                 <line x1="80" y1="68" x2="62" y2="58"/>
             </g>
-            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="276" stroke-dashoffset="60" />
         </svg>
         <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
     </div>
 </div>
 
-<div class="section">
-    <div style="display:flex; align-items:center; margin-bottom:15px;">
-        <h2 id="project-header">Project Availability</h2>
-        <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
-    </div>
-    
-    <h2>Ready to Print</h2>
-    <div id="readyList" class="avail-list"></div>
-    
-    <h2 style="margin-top: 25px; color: var(--warning);">Almost Ready (70%+)</h2>
-    <div id="almostList" class="avail-list"></div>
-
-    <h2 style="margin-top: 25px; color: var(--danger);">Missing Materials</h2>
-    <div id="missingList" class="avail-list"></div>
-
-    <h2 style="margin-top: 25px; color: var(--null);">No Stock at All</h2>
-    <div id="noneList" class="avail-list"></div>
+<div class="nav-bar">
+    <button class="nav-btn active" id="btn-projects" onclick="switchScene('projects')">PROJECTS</button>
+    <button class="nav-btn" id="btn-inventory" onclick="switchScene('inventory')">INVENTORY</button>
+    <button class="nav-btn" id="btn-create" onclick="switchScene('create')">CREATE NEW</button>
 </div>
 
-<div class="section">
-    <h2>Inventory Manager <small style="font-size:10px; opacity:0.5; float:right;">Click spool name to filter projects</small></h2>
-    <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
-    <div id="results-main" class="search-results"></div>
-    <div id="ownedList" class="inventory-grid"></div>
-</div>
-
-<div class="section" id="checker-section">
-    <h2>Project Checker</h2>
-    <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
-    <div id="results-proj" class="search-results"></div>
-    <div id="result-box"></div>
-</div>
-
-<div class="section">
-    <h2>Create Custom Project</h2>
-    <input id="customProjName" placeholder="Project Name (e.g. My Cool Statue)">
-    <div id="customInputs">
-        <div style="display:flex; gap:10px;">
-            <select class="custom-fil-select"></select>
-            <input type="number" class="custom-fil-grams" placeholder="Grams">
+<div id="scene-projects" class="scene active">
+    <div class="section">
+        <div style="display:flex; align-items:center; margin-bottom:15px;">
+            <h2 id="project-header">Project Availability</h2>
+            <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
         </div>
+        <h2>Ready to Print</h2>
+        <div id="readyList" class="avail-list"></div>
+        <h2 style="margin-top: 25px; color: var(--warning);">Almost Ready (70%+)</h2>
+        <div id="almostList" class="avail-list"></div>
+        <h2 style="margin-top: 25px; color: var(--danger);">Missing Materials</h2>
+        <div id="missingList" class="avail-list"></div>
+        <h2 style="margin-top: 25px; color: var(--null);">No Stock at All</h2>
+        <div id="noneList" class="avail-list"></div>
     </div>
-    <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
-    <button class="btn-print" onclick="saveCustomProject()">Save Project</button>
+
+    <div class="section" id="checker-section">
+        <h2>Project Checker</h2>
+        <input id="projSearchCheck" placeholder="Search Playbook'd or Custom..." onfocus="updateProjSearch()" oninput="updateProjSearch()">
+        <div id="results-proj" class="search-results"></div>
+        <div id="result-box"></div>
+    </div>
+</div>
+
+<div id="scene-inventory" class="scene">
+    <div class="section">
+        <h2>Inventory Manager</h2>
+        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
+        <div id="results-main" class="search-results"></div>
+        <div id="ownedList" class="inventory-grid"></div>
+        <button class="btn-print" style="margin-top: 30px; background: var(--card); border: 1px solid var(--accent); color: var(--accent);" onclick="switchScene('projects')">Save & Return to Projects</button>
+    </div>
+</div>
+
+<div id="scene-create" class="scene">
+    <div class="section">
+        <h2>Create Custom Project</h2>
+        <input id="customProjName" placeholder="Project Name (e.g. My Cool Statue)">
+        <div id="customInputs">
+            <div style="display:flex; gap:10px;">
+                <select class="custom-fil-select"></select>
+                <input type="number" class="custom-fil-grams" placeholder="Grams">
+            </div>
+        </div>
+        <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
+        <button class="btn-print" onclick="saveCustomProject()">Save & View Projects</button>
+    </div>
 </div>
 
 <div class="backup-footer">
@@ -159,6 +172,18 @@
 
 <script>
     let activeFilamentFilter = null;
+
+    // SCENE LOGIC
+    function switchScene(sceneId) {
+        document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById('scene-' + sceneId).classList.add('active');
+        document.getElementById('btn-' + sceneId).classList.add('active');
+        
+        if(sceneId === 'projects') updateAvailableProjects();
+        window.scrollTo(0,0);
+    }
 
     const playbookProjects = {
         backgammon: [{ f: "Bambu PLA Matte Dark Brown (11801)", g: 150 }, { f: "Bambu PLA Matte Bone White", g: 120 }, { f: "Bambu PLA Matte Dark Blue (11602)", g: 43 }],
@@ -212,8 +237,7 @@
 
     function filterByFilament(name) {
         activeFilamentFilter = name;
-        updateAvailableProjects();
-        document.querySelector('.header').scrollIntoView({ behavior: 'smooth' });
+        switchScene('projects');
     }
 
     function updateAvailableProjects() {
@@ -231,8 +255,6 @@
 
         Object.keys(all).forEach(key => {
             const reqs = all[key];
-            
-            // Check if this project uses the filtered filament (if filter active)
             if (activeFilamentFilter && !reqs.some(r => r.f === activeFilamentFilter)) return;
 
             let matchCount = 0;
@@ -243,25 +265,19 @@
                 totalStockForProject += stock;
             });
             
-            const isReady = matchCount === reqs.length;
             const percentage = (matchCount / reqs.length) * 100;
-            const displayName = playbookProjects[key] ? "Playbook'd: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : key;
+            const displayName = playbookProjects[key] ? "Playbook: " + key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : key;
             const prefix = playbookProjects[key] ? "p:" : "c:";
-
-            const data = { name: displayName, val: prefix + key, fils: reqs, matchCount, totalCount: reqs.length, isReady, percentage };
+            const data = { name: displayName, val: prefix + key, fils: reqs, matchCount, totalCount: reqs.length, isReady: matchCount === reqs.length, percentage };
             
-            if(isReady) readyArr.push(data); 
+            if(data.isReady) readyArr.push(data); 
             else if(percentage >= 70) almostArr.push(data);
             else if(totalStockForProject > 0) missingArr.push(data);
             else noneArr.push(data);
         });
 
         const renderItem = (p, type) => {
-            let barColor = 'var(--null)';
-            if (type === 'ready') barColor = 'var(--accent)';
-            else if (type === 'almost') barColor = 'var(--warning)';
-            else if (type === 'missing') barColor = 'var(--danger)';
-
+            let barColor = type === 'ready' ? 'var(--accent)' : (type === 'almost' ? 'var(--warning)' : 'var(--danger)');
             return `
             <div class="avail-item ${type === 'missing' ? 'missing-stock' : (type === 'none' ? 'no-stock' : type)}" onclick="checkProject('${p.val}', '${p.name.replace(/'/g, "\\'")}')">
                 <b>${p.name}</b>
@@ -275,10 +291,10 @@
             </div>`;
         };
         
-        readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
-        almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
-        missingDiv.innerHTML = missingArr.length ? missingArr.map(p => renderItem(p, 'missing')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
-        noneDiv.innerHTML = noneArr.length ? noneArr.map(p => renderItem(p, 'none')).join('') : "<small style='opacity:0.5'>No matching projects.</small>";
+        readyDiv.innerHTML = readyArr.length ? readyArr.map(p => renderItem(p, 'ready')).join('') : "<small>None.</small>";
+        almostDiv.innerHTML = almostArr.length ? almostArr.map(p => renderItem(p, 'almost')).join('') : "<small>None.</small>";
+        missingDiv.innerHTML = missingArr.length ? missingArr.map(p => renderItem(p, 'missing')).join('') : "<small>None.</small>";
+        noneDiv.innerHTML = noneArr.length ? noneArr.map(p => renderItem(p, 'none')).join('') : "<small>None.</small>";
     }
 
     function addCustomInput() {
@@ -291,24 +307,22 @@
 
     function saveCustomProject() {
         const name = document.getElementById('customProjName').value.trim();
-        if(!name) return alert("Enter project name");
+        if(!name) return;
         const selects = document.querySelectorAll('.custom-fil-select');
         const grams = document.querySelectorAll('.custom-fil-grams');
         let reqs = [];
         selects.forEach((s, i) => { if(grams[i].value > 0) reqs.push({ f: s.value, g: parseFloat(grams[i].value) }); });
-        if(reqs.length === 0) return alert("Add at least one filament requirement");
         let custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
         custom[name] = reqs;
         localStorage.setItem('customProjects', JSON.stringify(custom));
-        alert("Custom Project Saved!");
-        location.reload();
+        switchScene('projects');
     }
 
     function addNewSpool(name) {
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         spools.push({ id: Date.now(), name, current: 1000, max: 1000 });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock(); updateAvailableProjects(); forceCloseResults();
+        renderStock(); forceCloseResults();
     }
 
     function adjustWeight(id, amount) {
@@ -319,7 +333,7 @@
             else spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
         }
         localStorage.setItem('multiSpools', JSON.stringify(spools));
-        renderStock(); updateAvailableProjects();
+        renderStock();
     }
 
     function renderStock() {
@@ -328,11 +342,9 @@
         spools.sort((a,b) => a.name.localeCompare(b.name));
         container.innerHTML = spools.map(s => `<div class="stock-item">
             <button class="delete-btn" onclick="adjustWeight(${s.id}, -9999)">×</button>
-            <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; font-weight:700; opacity:0.7; overflow:hidden;">${s.name}</div>
+            <div class="stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="font-size:10px; opacity:0.7; overflow:hidden;">${s.name}</div>
             <div class="weight-display">${s.current}g</div>
-            <div class="progress-container">
-                <div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div>
-            </div>
+            <div class="progress-container"><div class="progress-bar" style="width:${(s.current/s.max)*100}%"></div></div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="color-dot stock-clickable" onclick="filterByFilament('${s.name.replace(/'/g, "\\'")}')" style="width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.4); background:${getFilamentColor(s.name)}"></div>
                 <div class="weight-controls" style="flex-grow:1; margin-left:10px;">
@@ -354,7 +366,7 @@
         const res = document.getElementById('results-proj'); res.style.display = 'block';
         const all = getAllProjects();
         res.innerHTML = Object.keys(all).filter(k => k.toLowerCase().includes(q)).map(k => {
-            const disp = playbookProjects[k] ? "Playbook'd: " + k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : k;
+            const disp = playbookProjects[k] ? "Playbook: " + k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : k;
             const prefix = playbookProjects[k] ? "p:" : "c:";
             return `<div class="search-item" onmousedown="checkProject('${prefix}${k}', '${disp.replace(/'/g, "\\'")}')">${disp}</div>`;
         }).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
@@ -368,30 +380,21 @@
         const totals = getCombinedStock(); 
         let canPrint = true;
         let isCustom = parts[0] === 'c';
-
-        let html = `<div class="project-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="margin:0; color:var(--accent);">${name}</h3>
-                            ${isCustom ? `<button onclick="deleteCustomProject('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">DELETE</button>` : ''}
-                        </div>`;
-        
+        let html = `<div class="project-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:var(--accent);">${name}</h3>${isCustom ? `<button onclick="deleteCustomProject('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">DELETE</button>` : ''}</div>`;
         reqs.forEach(item => {
             const totalAvailable = totals[item.f] || 0; 
             const isMissing = totalAvailable < item.g;
             if(isMissing) canPrint = false;
             html += `<div class="tag ${isMissing ? 'missing' : 'ready'}"><span><b>${item.f}</b></span><span>${totalAvailable}g / ${item.g}g</span></div>`;
         });
-
         if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 COMMIT TO PRINT</button>`;
-        else html += `<div style="text-align:center; padding:10px; opacity:0.5; font-size:12px;">Not enough stock to print.</div>`;
-
+        else html += `<div style="text-align:center; padding:10px; opacity:0.5; font-size:12px;">Insufficient stock.</div>`;
         document.getElementById('result-box').innerHTML = html + `</div>`;
         forceCloseResults(); 
-        document.getElementById('checker-section').scrollIntoView({ behavior: 'smooth' });
     }
 
     function deleteCustomProject(name) {
-        if(!confirm("Delete this custom project?")) return;
+        if(!confirm("Delete?")) return;
         let custom = JSON.parse(localStorage.getItem('customProjects') || "{}");
         delete custom[name];
         localStorage.setItem('customProjects', JSON.stringify(custom));
@@ -400,7 +403,7 @@
     }
 
     function commitPrint(projId) {
-        if(!confirm("Deduct stock? (Will use scraps first)")) return;
+        if(!confirm("Deduct stock?")) return;
         let spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const reqs = getAllProjects()[projId];
         reqs.forEach(req => {
@@ -415,7 +418,7 @@
         });
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
-        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px; font-weight:bold;'>Stock updated! Smallest spools cleared first.</div>";
+        document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px;'>Stock Deducted.</div>";
     }
 
     function exportData() {
@@ -434,7 +437,7 @@
                 const data = JSON.parse(e.target.result);
                 if (data.multiSpools) localStorage.setItem('multiSpools', JSON.stringify(data.multiSpools));
                 if (data.customProjects) localStorage.setItem('customProjects', JSON.stringify(data.customProjects));
-                alert("Restored successfully!"); location.reload();
+                location.reload();
             } catch (err) { alert("Invalid backup file."); }
         };
         reader.readAsText(file);
