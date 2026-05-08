@@ -12,11 +12,13 @@
             --bg: #1A1A1A; --card: #232323; --border: #2E2E2E; --text: #EAEAEA;
             --accent: #00FF7F; --danger: #FF4C4C; --warning: #FFD700; --null: #666; --shadow: 0 4px 14px rgba(0,0,0,0.35);
             --dot-border: rgba(255,255,255,0.8);
+            --btn-text: #000000; /* Black text for dark mode buttons */
         }
         :root.light {
             --bg: #FFFFFF; --card: #F2F2F2; --border: #CCCCCC; --text: #111;
             --accent: #00B368; --danger: #E53935; --warning: #F9A825; --null: #888; --shadow: 0 4px 14px rgba(0,0,0,0.12);
             --dot-border: rgba(0,0,0,0.3);
+            --btn-text: #FFFFFF; /* White text for light mode buttons */
         }
 
         body { margin: 0; padding: 0 20px 100px 20px; background: var(--bg); color: var(--text); font-family: "Segoe UI", sans-serif; transition: 0.25s; }
@@ -27,7 +29,10 @@
 
         .nav-bar { display: flex; justify-content: center; gap: 10px; margin: 0 auto 20px auto; max-width: 1100px; padding: 10px 0; }
         .nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        
+        /* Updated nav button active text color */
         .nav-btn.active { border-color: var(--accent); color: var(--accent); }
+        :root.light .nav-btn.active { background: var(--accent); color: white; }
 
         .header { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; max-width: 1100px; margin: 0 auto; }
         .logo-container { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
@@ -60,7 +65,9 @@
         .weight-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
         .weight-btn { padding: 10px; font-size: 11px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        .btn-print { width: 100%; background: var(--accent); color: #000; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
+        /* Main green button text color update */
+        .btn-print { width: 100%; background: var(--accent); color: var(--btn-text); padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.2s; }
+        
         .btn-add { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { position: absolute; top: 12px; right: 12px; background: none; color: var(--danger); border: none; cursor: pointer; font-size: 20px; opacity: 0.3; }
         
@@ -422,12 +429,11 @@
             const isMissing = totalAvailable < item.g;
             if(isMissing) canPrint = false;
 
-            // CHECK IF SPLIT IS NEEDED
             const matchingSpools = spools.filter(s => s.name === item.f);
             const needsSplit = !isMissing && matchingSpools.length > 1 && !matchingSpools.some(s => s.current >= item.g);
 
             let statusClass = isMissing ? 'missing' : (needsSplit ? 'split' : 'ready');
-            let statusLabel = needsSplit ? ' (SPLIT SPROOLS)' : '';
+            let statusLabel = needsSplit ? ' (SPLIT SPOOLS)' : '';
 
             html += `<div class="tag ${statusClass}"><div style="display:flex; align-items:center; gap:8px;"><div class="mini-dot" style="background:${getFilamentColor(item.f)}"></div><b>${item.f}${statusLabel}</b></div><span>${totalAvailable}g / ${item.g}g</span></div>`;
         });
@@ -456,7 +462,6 @@
         const reqs = getAllProjects()[projId];
         reqs.forEach(req => {
             let needed = req.g;
-            // DEDUCT FROM MULTIPLE SPOOLS OF THE SAME TYPE
             let rel = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
             rel.forEach(rs => {
                 if (needed <= 0) return;
