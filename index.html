@@ -72,6 +72,7 @@
         .tag { padding: 12px; margin: 8px 0; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
         .tag.missing { border-left: 5px solid var(--danger); }
         .tag.ready { border-left: 5px solid var(--accent); }
+        .tag.split { border-left: 5px solid var(--warning); }
 
         .avail-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .avail-item { background: var(--bg); border: 1px solid var(--border); padding: 10px 15px; border-radius: 10px; font-size: 13px; cursor: pointer; width: 220px; }
@@ -344,10 +345,7 @@
                 spools.splice(idx, 1);
             } else {
                 spools[idx].current = Math.max(0, parseFloat((spools[idx].current + amount).toFixed(2)));
-                // AUTO DELETE AT 0
-                if (spools[idx].current <= 0) {
-                    spools.splice(idx, 1);
-                }
+                if (spools[idx].current <= 0) spools.splice(idx, 1);
             }
         }
         localStorage.setItem('multiSpools', JSON.stringify(spools));
@@ -402,6 +400,7 @@
         const id = parts[1];
         const allProjs = getAllProjects();
         const reqs = allProjs[id]; 
+        const spools = JSON.parse(localStorage.getItem('multiSpools') || "[]");
         const totals = getCombinedStock(); 
         let canPrint = true;
         let totalGrams = 0;
@@ -422,7 +421,15 @@
             const totalAvailable = totals[item.f] || 0; 
             const isMissing = totalAvailable < item.g;
             if(isMissing) canPrint = false;
-            html += `<div class="tag ${isMissing ? 'missing' : 'ready'}"><div style="display:flex; align-items:center; gap:8px;"><div class="mini-dot" style="background:${getFilamentColor(item.f)}"></div><b>${item.f}</b></div><span>${totalAvailable}g / ${item.g}g</span></div>`;
+
+            // CHECK IF SPLIT IS NEEDED
+            const matchingSpools = spools.filter(s => s.name === item.f);
+            const needsSplit = !isMissing && matchingSpools.length > 1 && !matchingSpools.some(s => s.current >= item.g);
+
+            let statusClass = isMissing ? 'missing' : (needsSplit ? 'split' : 'ready');
+            let statusLabel = needsSplit ? ' (SPLIT SPROOLS)' : '';
+
+            html += `<div class="tag ${statusClass}"><div style="display:flex; align-items:center; gap:8px;"><div class="mini-dot" style="background:${getFilamentColor(item.f)}"></div><b>${item.f}${statusLabel}</b></div><span>${totalAvailable}g / ${item.g}g</span></div>`;
         });
         
         if(canPrint) html += `<button class="btn-print" onclick="commitPrint('${id}')">🚀 COMMIT TO PRINT</button>`;
@@ -449,6 +456,7 @@
         const reqs = getAllProjects()[projId];
         reqs.forEach(req => {
             let needed = req.g;
+            // DEDUCT FROM MULTIPLE SPOOLS OF THE SAME TYPE
             let rel = spools.filter(s => s.name === req.f).sort((a,b) => a.current - b.current);
             rel.forEach(rs => {
                 if (needed <= 0) return;
@@ -458,9 +466,7 @@
             });
         });
 
-        // AUTO DELETE EMPTY AFTER PRINT
         spools = spools.filter(s => s.current > 0);
-
         localStorage.setItem('multiSpools', JSON.stringify(spools));
         renderStock(); updateAvailableProjects();
         document.getElementById('result-box').innerHTML = "<div style='color:var(--accent); text-align:center; padding:20px;'>Stock Deducted & Empties Removed.</div>";
