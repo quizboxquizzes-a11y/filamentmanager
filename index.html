@@ -132,6 +132,28 @@
     border:2px solid var(--dot-border);
     box-sizing:border-box;
     }
+    .custom-filament-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    margin-top:10px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    }
+
+    .custom-filament-delete{
+    background:var(--danger);
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:6px 10px;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:bold;
+    }
     </style>
 </head>
 <body onclick="closeAllResults(event)">
@@ -200,6 +222,7 @@
     <div style="margin-top:12px;">
         <button class="btn-print" onclick="addCustomFilament()">ADD FILAMENT TYPE</button>
     </div>
+    <div id="customFilamentList" style="margin-top:20px;"></div>
 </div>
         <div id="ownedList" class="inventory-grid"></div>
         <button class="btn-print" style="margin-top: 30px; background: var(--card); border: 1px solid var(--accent); color: var(--accent);" onclick="switchScene('projects')">Save & Return to Projects</button>
@@ -584,12 +607,104 @@ function addCustomFilament() {
     document.getElementById('newColour').value = '';
 
     updateSearch();
-
+    renderCustomFilamentList();
     alert(`Added: ${filamentName}`);
 }
     if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
     document.querySelectorAll('.custom-fil-select').forEach(s => s.innerHTML = filamentsList.map(f => `<option value="${f}">${f}</option>`).join(''));
     renderStock(); updateAvailableProjects();
+function renderCustomFilamentList(){
+
+    const container = document.getElementById('customFilamentList');
+
+    if(!container) return;
+
+    if(customFilaments.length === 0){
+
+        container.innerHTML = `
+        <div style="opacity:0.5; font-size:13px;">
+            No custom filaments added.
+        </div>`;
+
+        return;
+    }
+
+    container.innerHTML = customFilaments.map(f => {
+
+        return `
+        <div class="custom-filament-item">
+
+            <div style="display:flex; align-items:center; gap:10px;">
+
+                <div class="mini-dot"
+                     style="background:${getFilamentColor(f)}">
+                </div>
+
+                <span>${f}</span>
+
+            </div>
+
+            <button class="custom-filament-delete"
+                    onclick="deleteCustomFilament('${f.replace(/'/g, "\\'")}')">
+                DELETE
+            </button>
+
+        </div>
+        `;
+    }).join('');
+
+function deleteCustomFilament(name){
+
+    if(!confirm(`Delete ${name}?`)) return;
+
+    /* remove from custom filament array */
+    customFilaments =
+        customFilaments.filter(f => f !== name);
+
+    /* remove from main filament list */
+    const index = filamentsList.indexOf(name);
+
+    if(index !== -1){
+        filamentsList.splice(index, 1);
+    }
+
+    /* remove spools using that filament */
+    let spools =
+        JSON.parse(localStorage.getItem('multiSpools') || "[]");
+
+    spools = spools.filter(s => s.name !== name);
+
+    localStorage.setItem(
+        'multiSpools',
+        JSON.stringify(spools)
+    );
+
+    /* save updated custom filament list */
+    localStorage.setItem(
+        'customFilaments',
+        JSON.stringify(customFilaments)
+    );
+
+    /* refresh dropdowns */
+    document.querySelectorAll('.custom-fil-select').forEach(s => {
+
+        s.innerHTML = filamentsList
+            .sort()
+            .map(f => `<option value="${f}">${f}</option>`)
+            .join('');
+    });
+
+    renderCustomFilamentList();
+
+    renderStock();
+
+    updateAvailableProjects();
+
+    renderCustomFilamentList();
+
+    alert(`${name} deleted.`);
+}
+}
 </script>
 </body>
 </html>
