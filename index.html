@@ -608,11 +608,10 @@ function addCustomFilament() {
 
     updateSearch();
     renderCustomFilamentList();
+
     alert(`Added: ${filamentName}`);
 }
-    if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
-    document.querySelectorAll('.custom-fil-select').forEach(s => s.innerHTML = filamentsList.map(f => `<option value="${f}">${f}</option>`).join(''));
-    renderStock(); updateAvailableProjects();
+
 function renderCustomFilamentList(){
 
     const container = document.getElementById('customFilamentList');
@@ -652,7 +651,8 @@ function renderCustomFilamentList(){
         </div>
         `;
     }).join('');
-    }
+}
+
 function deleteCustomFilament(name){
 
     if(!confirm(`Delete ${name}?`)) return;
@@ -704,7 +704,19 @@ function deleteCustomFilament(name){
 
     alert(`${name} deleted.`);
 }
+if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.classList.add('light');
 }
+
+document.querySelectorAll('.custom-fil-select').forEach(s => {
+    s.innerHTML = filamentsList
+        .map(f => `<option value="${f}">${f}</option>`)
+        .join('');
+});
+
+renderStock();
+updateAvailableProjects();
+renderCustomFilamentList();
 </script>
 </body>
 </html>
