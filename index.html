@@ -103,8 +103,8 @@
         .btn-small { background: none; border: 1px solid var(--text); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
         
         #clear-filter-btn { display: none; background: var(--danger); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-left: 10px; }
-        /* ===== CUSTOM FILAMENT CREATOR ===== */
-    .custom-filament-box{
+        /* ===== CUSTOM  CREATOR ===== */
+    .custom--box{
     margin-top:20px;
     padding:18px;
     border:1px solid var(--border);
@@ -112,7 +112,7 @@
     background:var(--bg);
     }
 
-    .custom-filament-row{
+    .custom--row{
     display:grid;
     grid-template-columns:1fr 1fr 1fr 70px;
     gap:10px;
@@ -120,7 +120,7 @@
     }
 
     @media (max-width:700px){
-    .custom-filament-row{
+    .custom--row{
         grid-template-columns:1fr;
     }
     }
@@ -132,7 +132,7 @@
     border:2px solid var(--dot-border);
     box-sizing:border-box;
     }
-    .custom-filament-item{
+    .custom--item{
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -144,7 +144,7 @@
     border-radius:10px;
     }
 
-    .custom-filament-delete{
+    .custom--delete{
     background:var(--danger);
     color:white;
     border:none;
@@ -169,7 +169,7 @@
                 <line x1="80" y1="68" x2="62" y2="58"/>
             </g>
         </svg>
-        <div style="font-size: 24px; font-weight: 900; color: var(--accent);">FILAMENT STOCK</div>
+        <div style="font-size: 24px; font-weight: 900; color: var(--accent);"> STOCK</div>
     </div>
 </div>
 
@@ -183,7 +183,7 @@
     <div class="section">
         <div style="display:flex; align-items:center; margin-bottom:15px;">
             <h2 id="project-header">Project Availability</h2>
-            <button id="clear-filter-btn" onclick="activeFilamentFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
+            <button id="clear-filter-btn" onclick="activeFilter = null; updateAvailableProjects();">CLEAR FILTER</button>
         </div>
         <h2>Ready to Print</h2>
         <div id="readyList" class="avail-list"></div>
@@ -206,9 +206,9 @@
 <div id="scene-inventory" class="scene">
     <div class="section">
         <h2>Inventory Manager</h2>
-        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
+        <input id="SearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
-        <div class="custom-filament-box">
+        <div class="custom--box">
     <h2>Add New Filament Type</h2>
 
     <div class="custom-filament-row">
@@ -271,8 +271,6 @@
     const playbookProjects = {
 };
 
-    const filamentsList = ["Bambu PLA Black (10101)", "Bambu PLA Jade White (10100)", "Bambu PLA Matte Charcoal (11101)", "Bambu PLA Matte Bone White", "Bambu PLA Matte Dark Blue (11602)", "Bambu PLA Matte Dark Red", "Bambu PLA Matte Dark Brown (11801)", "Bambu PLA Matte Ivory White (11100)", "Bambu PLA Matte Ash Grey (11102)", "Bambu PLA Matte Desert Tan", "Bambu PLA Matte Terracotta", "Bambu PLA Matte Dark Chocolate (11802)", "Bambu PLA Matte Yellow (10400)", "Bambu PLA Matte Apple Green (11502)", "Bambu PLA Matte Grass Green", "Bambu PLA Matte Mandarin Orange (11300)"];
-    
     const filamentColors = { 
         "Black": "#000000", "White": "#F8F8F8", "Charcoal": "#333333", "Bone": "#D8C9B0", 
         "Blue": "#1a73e8", "Red": "#d93025", "Brown": "#5d4037", "Ivory": "#E5E2C5", 
