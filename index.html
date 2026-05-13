@@ -177,7 +177,6 @@
     <button class="nav-btn active" id="btn-projects" onclick="switchScene('projects')">PROJECTS</button>
     <button class="nav-btn" id="btn-inventory" onclick="switchScene('inventory')">INVENTORY</button>
     <button class="nav-btn" id="btn-create" onclick="switchScene('create')">CREATE NEW</button>
-    <button class="nav-btn" id="btn-printers" onclick="switchScene('printers')">PRINTERS</button>
 </div>
 
 <div id="scene-projects" class="scene active">
@@ -242,19 +241,6 @@
         </div>
         <button class="btn-add" onclick="addCustomInput()">+ Add Another Color</button>
         <button class="btn-print" onclick="saveCustomProject()">Save & View Projects</button>
-    </div>
-</div>
-    <div id="scene-printers" class="scene">
-    <div class="section">
-        <h2>Printer Fleet Management</h2>
-        <div class="custom-filament-box">
-            <div class="custom-filament-row">
-                <input id="printerName" placeholder="Printer Name (e.g. Bambu P1P)">
-                <input type="number" id="hourlyRate" placeholder="Hourly Cost (£)">
-                <button class="btn-print" style="margin-top:0;" onclick="addPrinter()">ADD PRINTER</button>
-            </div>
-        </div>
-        <div id="printerList" class="inventory-grid" style="margin-top:20px;"></div>
     </div>
 </div>
 
@@ -707,37 +693,6 @@ function deleteCustomFilament(name){
             .map(f => `<option value="${f}">${f}</option>`)
             .join('');
     });
-    let printers = JSON.parse(localStorage.getItem('printers') || "[]");
-
-function addPrinter() {
-    const name = document.getElementById('printerName').value.trim();
-    const rate = document.getElementById('hourlyRate').value || 0;
-    if(!name) return;
-    printers.push({ id: Date.now(), name, rate: parseFloat(rate), status: 'Idle' });
-    localStorage.setItem('printers', JSON.stringify(printers));
-    renderPrinters();
-    document.getElementById('printerName').value = '';
-    document.getElementById('hourlyRate').value = '';
-}
-
-function renderPrinters() {
-    const container = document.getElementById('printerList');
-    if(!container) return;
-    container.innerHTML = printers.map(p => `
-        <div class="stock-item">
-            <button class="delete-btn" onclick="deletePrinter(${p.id})">×</button>
-            <div style="font-size:18px; font-weight:900; color:var(--accent);">${p.name}</div>
-            <div style="margin-top:8px; font-size:12px; opacity:0.8;">Cost: £${p.rate.toFixed(2)}/hr</div>
-        </div>
-    `).join('');
-}
-
-function deletePrinter(id) {
-    if(!confirm("Remove?")) return;
-    printers = printers.filter(p => p.id !== id);
-    localStorage.setItem('printers', JSON.stringify(printers));
-    renderPrinters();
-}
 
     renderCustomFilamentList();
 
