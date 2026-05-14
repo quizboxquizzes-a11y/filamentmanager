@@ -298,7 +298,77 @@
     const filamentsList = [];
     
     const filamentColors = {};
+    /* ===== THE SCANNING LOGIC ===== */
+const CATALOG_CONFIG = {
+    bambu: {
+        url: 'https://uk.store.bambulab.com/collections/filament',
+        itemSelector: '.product-card',
+        titleSelector: '.product-card__title',
+        priceSelector: '.price__regular .price-item',
+        imageSelector: '.product-card__image'
+    },
+    flashforge: {
+        url: 'https://www.flashforge.com/category/3d-printer-filament',
+        itemSelector: '.product-item',
+        titleSelector: '.product-name',
+        priceSelector: '.price-box',
+        imageSelector: '.product-image img'
+    }
+};
 
+async function loadCatalog(brand) {
+    const grid = document.getElementById('catalog-grid');
+    grid.innerHTML = `<div style='grid-column: 1/-1; text-align:center; padding:50px;'>🔄 Scanning ${brand}...</div>`;
+    
+    const config = CATALOG_CONFIG[brand];
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(config.url)}`;
+
+    try {
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, 'text/html');
+        const items = doc.querySelectorAll(config.itemSelector);
+        
+        grid.innerHTML = ""; 
+
+        items.forEach(item => {
+            const title = item.querySelector(config.titleSelector)?.innerText.trim() || "Unknown";
+            const price = item.querySelector(config.priceSelector)?.innerText.trim() || "£??";
+            let imgSrc = item.querySelector(config.imageSelector)?.src || item.querySelector(config.imageSelector)?.getAttribute('data-src');
+            if (imgSrc && imgSrc.startsWith('//')) imgSrc = 'https:' + imgSrc;
+
+            const card = document.createElement('div');
+            card.className = 'stock-item';
+            card.innerHTML = `
+                <img src="${imgSrc}" style="width:100%; height:80px; object-fit:contain; background:white; border-radius:4px;">
+                <div style="font-size:10px; font-weight:bold; margin-top:5px;">${title}</div>
+                <div style="color:var(--accent); font-weight:bold;">${price}</div>
+                <button class="btn-add" onclick="quickAddFromCatalog('${brand}', '${title.replace(/'/g, "\\'")}')" style="width:100%; font-size:10px; margin-top:5px;">
+                    QUICK ADD
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        grid.innerHTML = `<div style="color:var(--danger); padding:20px;">Error scanning site.</div>`;
+    }
+}
+
+function quickAddFromCatalog(brand, title) {
+    const fullName = `${brand.toUpperCase()} ${title}`;
+    
+    // Add to the master list if it's new
+    if (!filamentsList.includes(fullName)) {
+        filamentsList.push(fullName);
+        let customs = JSON.parse(localStorage.getItem('customFilaments') || "[]");
+        customs.push(fullName);
+        localStorage.setItem('customFilaments', JSON.stringify(customs));
+    }
+
+    autoAddSpool(fullName);
+    alert("Added " + fullName + " to inventory!");
+}
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
         logo.classList.remove('animate-spin');
@@ -456,12 +526,34 @@
         </div>`}).join('');
     }
 
-    function updateSearch() {
-        const q = document.getElementById('filamentSearchMain').value.toLowerCase();
-        const res = document.getElementById('results-main'); res.style.display = 'block';
-        res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f.replace(/'/g, "\\'")}')">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+ function updateSearch() {
+    const q = document.getElementById('filamentSearchMain').value.toLowerCase();
+    const res = document.getElementById('results-main'); 
+    
+    if (q.length < 1) {
+        res.style.display = 'none';
+        return;
     }
 
+    res.style.display = 'block';
+    
+    // Filter the list and create clickable items
+    const filtered = filamentsList.filter(f => f.toLowerCase().includes(q));
+    
+    res.innerHTML = filtered.map(f => `
+        <div class="search-item" onmousedown="autoAddSpool('${f.replace(/'/g, "\\'")}')">
+            <span>➕</span> ${f}
+        </div>
+    `).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
+}
+
+// New helper function to handle the "Auto-Add"
+function autoAddSpool(name) {
+    addNewSpool(name); // Uses your existing logic to create the 1000g spool
+    document.getElementById('filamentSearchMain').value = ""; // Clear search
+    forceCloseResults();
+    triggerLogoAnimation();
+}
     function updateProjSearch() {
         const q = document.getElementById('projSearchCheck').value.toLowerCase();
         const res = document.getElementById('results-proj'); res.style.display = 'block';
