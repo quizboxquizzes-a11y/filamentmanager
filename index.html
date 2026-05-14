@@ -205,37 +205,11 @@
 
 <div id="scene-inventory" class="scene">
     <div class="section">
-        <h2>Add to Inventory</h2>
-        <input id="filamentSearchMain" placeholder="Search saved filaments..." onfocus="updateSearch()" oninput="updateSearch()">
+        <h2>Inventory Manager</h2>
+        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
-
-        <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top:20px;">
-            <h2 style="font-size:12px;">Store Quick-Add</h2>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="nav-btn" onclick="loadCatalog('bambu')" style="flex:1; font-size:10px;">SCAN BAMBU</button>
-                <button class="nav-btn" onclick="loadCatalog('flashforge')" style="flex:1; font-size:10px;">SCAN FLASHFORGE</button>
-            </div>
-            <div id="catalog-grid" class="inventory-grid" style="max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.1); padding:10px; border-radius:8px;">
-                </div>
-        </div>
-        
-        <h2 style="margin-top:30px;">Your Physical Stock</h2>
-        <div id="ownedList" class="inventory-grid"></div>
-    </div>
-</div>
-    <div class="section">
-    <h2 style="color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Official Store Catalog</h2>
-    <p style="font-size: 11px; opacity: 0.6; margin-bottom: 15px;">Live-scanning official stores for stock and pricing.</p>
-    
-    <div style="display:flex; gap:10px; margin-bottom:20px;">
-        <button class="nav-btn" onclick="loadCatalog('bambu')" style="flex:1;">SCAN BAMBU LAB</button>
-        <button class="nav-btn" onclick="loadCatalog('flashforge')" style="flex:1;">SCAN FLASHFORGE</button>
-    </div>
-
-    <div id="catalog-grid" class="inventory-grid" style="max-height: 500px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px;">
-        <div style="text-align:center; opacity:0.3; padding:40px;">Select a brand to scan live prices...</div>
-    </div>
-</div>
+        <div class="custom-filament-box">
+    <h2>Add New Filament Type</h2>
 
     <div class="custom-filament-row">
         <input id="newBrand" placeholder="Brand (e.g. Bambu)">
@@ -253,16 +227,6 @@
         <div id="ownedList" class="inventory-grid"></div>
         <button class="btn-print" style="margin-top: 30px; background: var(--card); border: 1px solid var(--accent); color: var(--accent);" onclick="switchScene('projects')">Save & Return to Projects</button>
     </div>
-</div>
-
-<div class="section">
-    <h2>Official Filament Catalog</h2>
-    <div style="display:flex; gap:10px; margin-bottom:15px;">
-        <button class="nav-btn" onclick="loadCatalog('bambu')">Bambu Lab</button>
-        <button class="nav-btn" onclick="loadCatalog('flashforge')">Flashforge</button>
-    </div>
-    <div id="catalog-grid" class="inventory-grid">
-        </div>
 </div>
 
 <div id="scene-create" class="scene">
@@ -295,81 +259,14 @@
     const COST_PER_GRAM = 0.02; // £20 per kg
     const LOW_STOCK_THRESHOLD = 150; 
 
-    /* 1. Updated Scene Switcher to keep Inventory clean */
-function switchScene(sceneId) {
-    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('scene-' + sceneId).classList.add('active');
-    document.getElementById('btn-' + sceneId).classList.add('active');
-    
-    // Refresh inventory or projects when entering those scenes
-    if(sceneId === 'inventory') renderStock();
-    if(sceneId === 'projects') updateAvailableProjects();
-    
-    window.scrollTo(0,0);
-}
-
-/* 2. Fixed Catalog Scanner (No more infinite loading) */
-async function loadCatalog(brand) {
-    const grid = document.getElementById('catalog-grid');
-    grid.innerHTML = `<div style='grid-column: 1/-1; text-align:center; padding:50px;'>
-        <div class="animate-spin" style="font-size:30px; margin-bottom:10px;">🔄</div>
-        Scanning ${brand} store...
-    </div>`;
-    
-    const config = CATALOG_CONFIG[brand];
-    // We use a different proxy service or a direct fetch if possible
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(config.url)}`;
-
-    // Set a 10-second timeout so it doesn't spin forever
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    try {
-        const response = await fetch(proxyUrl, { signal: controller.signal });
-        const data = await response.json();
-        clearTimeout(timeoutId);
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
-        const items = doc.querySelectorAll(config.itemSelector);
-        
-        grid.innerHTML = ""; 
-
-        if (!items || items.length === 0) {
-            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; opacity:0.6;">
-                The store blocked the scan. Try searching for "${brand}" manually above.
-            </div>`;
-            return;
-        }
-
-        items.forEach((item, idx) => {
-            if (idx > 11) return; // Limit to 12 items for speed
-            const title = item.querySelector(config.titleSelector)?.innerText.trim() || "Unknown";
-            const price = item.querySelector(config.priceSelector)?.innerText.trim() || "—";
-            let imgSrc = item.querySelector(config.imageSelector)?.src || item.querySelector(config.imageSelector)?.getAttribute('data-src');
-            
-            if (imgSrc && imgSrc.startsWith('//')) imgSrc = 'https:' + imgSrc;
-
-            const card = document.createElement('div');
-            card.className = 'stock-item';
-            card.style.minHeight = "auto";
-            card.innerHTML = `
-                <img src="${imgSrc}" style="width:100%; height:60px; object-fit:contain; background:white; border-radius:4px;">
-                <div style="font-size:10px; font-weight:bold; margin:5px 0; height:24px; overflow:hidden;">${title}</div>
-                <div style="color:var(--accent); font-weight:bold; font-size:12px;">${price}</div>
-                <button class="btn-add" onclick="quickAddFromCatalog('${brand}', '${title.replace(/'/g, "\\'")}')" style="width:100%; font-size:9px; margin-top:5px; padding:4px;">
-                    QUICK ADD
-                </button>
-            `;
-            grid.appendChild(card);
-        });
-    } catch (err) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--danger);">
-            Connection timeout. Please check your internet or try again later.
-        </div>`;
+    function switchScene(sceneId) {
+        document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('scene-' + sceneId).classList.add('active');
+        document.getElementById('btn-' + sceneId).classList.add('active');
+        if(sceneId === 'projects') updateAvailableProjects();
+        window.scrollTo(0,0);
     }
-}
 
     const playbookProjects = {
 };
@@ -377,77 +274,7 @@ async function loadCatalog(brand) {
     const filamentsList = [];
     
     const filamentColors = {};
-    /* ===== THE SCANNING LOGIC ===== */
-const CATALOG_CONFIG = {
-    bambu: {
-        url: 'https://uk.store.bambulab.com/collections/filament',
-        itemSelector: '.product-card',
-        titleSelector: '.product-card__title',
-        priceSelector: '.price__regular .price-item',
-        imageSelector: '.product-card__image'
-    },
-    flashforge: {
-        url: 'https://www.flashforge.com/category/3d-printer-filament',
-        itemSelector: '.product-item',
-        titleSelector: '.product-name',
-        priceSelector: '.price-box',
-        imageSelector: '.product-image img'
-    }
-};
 
-async function loadCatalog(brand) {
-    const grid = document.getElementById('catalog-grid');
-    grid.innerHTML = `<div style='grid-column: 1/-1; text-align:center; padding:50px;'>🔄 Scanning ${brand}...</div>`;
-    
-    const config = CATALOG_CONFIG[brand];
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(config.url)}`;
-
-    try {
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
-        const items = doc.querySelectorAll(config.itemSelector);
-        
-        grid.innerHTML = ""; 
-
-        items.forEach(item => {
-            const title = item.querySelector(config.titleSelector)?.innerText.trim() || "Unknown";
-            const price = item.querySelector(config.priceSelector)?.innerText.trim() || "£??";
-            let imgSrc = item.querySelector(config.imageSelector)?.src || item.querySelector(config.imageSelector)?.getAttribute('data-src');
-            if (imgSrc && imgSrc.startsWith('//')) imgSrc = 'https:' + imgSrc;
-
-            const card = document.createElement('div');
-            card.className = 'stock-item';
-            card.innerHTML = `
-                <img src="${imgSrc}" style="width:100%; height:80px; object-fit:contain; background:white; border-radius:4px;">
-                <div style="font-size:10px; font-weight:bold; margin-top:5px;">${title}</div>
-                <div style="color:var(--accent); font-weight:bold;">${price}</div>
-                <button class="btn-add" onclick="quickAddFromCatalog('${brand}', '${title.replace(/'/g, "\\'")}')" style="width:100%; font-size:10px; margin-top:5px;">
-                    QUICK ADD
-                </button>
-            `;
-            grid.appendChild(card);
-        });
-    } catch (err) {
-        grid.innerHTML = `<div style="color:var(--danger); padding:20px;">Error scanning site.</div>`;
-    }
-}
-
-function quickAddFromCatalog(brand, title) {
-    const fullName = `${brand.toUpperCase()} ${title}`;
-    
-    // Add to the master list if it's new
-    if (!filamentsList.includes(fullName)) {
-        filamentsList.push(fullName);
-        let customs = JSON.parse(localStorage.getItem('customFilaments') || "[]");
-        customs.push(fullName);
-        localStorage.setItem('customFilaments', JSON.stringify(customs));
-    }
-
-    autoAddSpool(fullName);
-    alert("Added " + fullName + " to inventory!");
-}
     function triggerLogoAnimation() {
         const logo = document.getElementById('logo-svg');
         logo.classList.remove('animate-spin');
@@ -605,34 +432,12 @@ function quickAddFromCatalog(brand, title) {
         </div>`}).join('');
     }
 
- function updateSearch() {
-    const q = document.getElementById('filamentSearchMain').value.toLowerCase();
-    const res = document.getElementById('results-main'); 
-    
-    if (q.length < 1) {
-        res.style.display = 'none';
-        return;
+    function updateSearch() {
+        const q = document.getElementById('filamentSearchMain').value.toLowerCase();
+        const res = document.getElementById('results-main'); res.style.display = 'block';
+        res.innerHTML = filamentsList.filter(f => f.toLowerCase().includes(q)).map(f => `<div class="search-item" onmousedown="addNewSpool('${f.replace(/'/g, "\\'")}')">${f}</div>`).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
     }
 
-    res.style.display = 'block';
-    
-    // Filter the list and create clickable items
-    const filtered = filamentsList.filter(f => f.toLowerCase().includes(q));
-    
-    res.innerHTML = filtered.map(f => `
-        <div class="search-item" onmousedown="autoAddSpool('${f.replace(/'/g, "\\'")}')">
-            <span>➕</span> ${f}
-        </div>
-    `).join('') + `<div class="search-item" style="color:var(--danger)" onmousedown="forceCloseResults()">Close</div>`;
-}
-
-// New helper function to handle the "Auto-Add"
-function autoAddSpool(name) {
-    addNewSpool(name); // Uses your existing logic to create the 1000g spool
-    document.getElementById('filamentSearchMain').value = ""; // Clear search
-    forceCloseResults();
-    triggerLogoAnimation();
-}
     function updateProjSearch() {
         const q = document.getElementById('projSearchCheck').value.toLowerCase();
         const res = document.getElementById('results-proj'); res.style.display = 'block';
