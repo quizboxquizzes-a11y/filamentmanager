@@ -205,12 +205,24 @@
 
 <div id="scene-inventory" class="scene">
     <div class="section">
-        <h2>Inventory Manager</h2>
-        <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
+        <h2>Add to Inventory</h2>
+        <input id="filamentSearchMain" placeholder="Search saved filaments..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
-        <div class="custom-filament-box">
-    <h2>Add New Filament Type</h2>
 
+        <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top:20px;">
+            <h2 style="font-size:12px;">Store Quick-Add</h2>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="nav-btn" onclick="loadCatalog('bambu')" style="flex:1; font-size:10px;">SCAN BAMBU</button>
+                <button class="nav-btn" onclick="loadCatalog('flashforge')" style="flex:1; font-size:10px;">SCAN FLASHFORGE</button>
+            </div>
+            <div id="catalog-grid" class="inventory-grid" style="max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.1); padding:10px; border-radius:8px;">
+                </div>
+        </div>
+        
+        <h2 style="margin-top:30px;">Your Physical Stock</h2>
+        <div id="ownedList" class="inventory-grid"></div>
+    </div>
+</div>
     <div class="section">
     <h2 style="color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Official Store Catalog</h2>
     <p style="font-size: 11px; opacity: 0.6; margin-bottom: 15px;">Live-scanning official stores for stock and pricing.</p>
@@ -283,14 +295,81 @@
     const COST_PER_GRAM = 0.02; // £20 per kg
     const LOW_STOCK_THRESHOLD = 150; 
 
-    function switchScene(sceneId) {
-        document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('scene-' + sceneId).classList.add('active');
-        document.getElementById('btn-' + sceneId).classList.add('active');
-        if(sceneId === 'projects') updateAvailableProjects();
-        window.scrollTo(0,0);
+    /* 1. Updated Scene Switcher to keep Inventory clean */
+function switchScene(sceneId) {
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('scene-' + sceneId).classList.add('active');
+    document.getElementById('btn-' + sceneId).classList.add('active');
+    
+    // Refresh inventory or projects when entering those scenes
+    if(sceneId === 'inventory') renderStock();
+    if(sceneId === 'projects') updateAvailableProjects();
+    
+    window.scrollTo(0,0);
+}
+
+/* 2. Fixed Catalog Scanner (No more infinite loading) */
+async function loadCatalog(brand) {
+    const grid = document.getElementById('catalog-grid');
+    grid.innerHTML = `<div style='grid-column: 1/-1; text-align:center; padding:50px;'>
+        <div class="animate-spin" style="font-size:30px; margin-bottom:10px;">🔄</div>
+        Scanning ${brand} store...
+    </div>`;
+    
+    const config = CATALOG_CONFIG[brand];
+    // We use a different proxy service or a direct fetch if possible
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(config.url)}`;
+
+    // Set a 10-second timeout so it doesn't spin forever
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+        const response = await fetch(proxyUrl, { signal: controller.signal });
+        const data = await response.json();
+        clearTimeout(timeoutId);
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, 'text/html');
+        const items = doc.querySelectorAll(config.itemSelector);
+        
+        grid.innerHTML = ""; 
+
+        if (!items || items.length === 0) {
+            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; opacity:0.6;">
+                The store blocked the scan. Try searching for "${brand}" manually above.
+            </div>`;
+            return;
+        }
+
+        items.forEach((item, idx) => {
+            if (idx > 11) return; // Limit to 12 items for speed
+            const title = item.querySelector(config.titleSelector)?.innerText.trim() || "Unknown";
+            const price = item.querySelector(config.priceSelector)?.innerText.trim() || "—";
+            let imgSrc = item.querySelector(config.imageSelector)?.src || item.querySelector(config.imageSelector)?.getAttribute('data-src');
+            
+            if (imgSrc && imgSrc.startsWith('//')) imgSrc = 'https:' + imgSrc;
+
+            const card = document.createElement('div');
+            card.className = 'stock-item';
+            card.style.minHeight = "auto";
+            card.innerHTML = `
+                <img src="${imgSrc}" style="width:100%; height:60px; object-fit:contain; background:white; border-radius:4px;">
+                <div style="font-size:10px; font-weight:bold; margin:5px 0; height:24px; overflow:hidden;">${title}</div>
+                <div style="color:var(--accent); font-weight:bold; font-size:12px;">${price}</div>
+                <button class="btn-add" onclick="quickAddFromCatalog('${brand}', '${title.replace(/'/g, "\\'")}')" style="width:100%; font-size:9px; margin-top:5px; padding:4px;">
+                    QUICK ADD
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--danger);">
+            Connection timeout. Please check your internet or try again later.
+        </div>`;
     }
+}
 
     const playbookProjects = {
 };
