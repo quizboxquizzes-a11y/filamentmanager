@@ -208,9 +208,8 @@
         <h2>Inventory Manager</h2>
         <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
-        <div class="custom-filament-box">
+<div class="custom-filament-box">
     <h2>Add New Filament Type</h2>
-
     <div class="custom-filament-row">
         <input id="newBrand" placeholder="Brand (e.g. Bambu)">
         <input id="newType" placeholder="Type (e.g. PLA)">
@@ -567,33 +566,64 @@ customFilaments.forEach(f => {
 /* Merge custom colours into colour system */
 Object.assign(filamentColors, customFilamentColors);
 
-function addCustomFilament() {
 
-    const brand = document.getElementById('newBrand').value.trim();
-    const type = document.getElementById('newType').value.trim();
-    const colour = document.getElementById('newColour').value.trim();
-    const hex = document.getElementById('newColourPicker').value;
-    const priceKg = document.getElementById('newPrice').value || 20; // Default to 20 if empty
-    if(!brand || !type || !colour){
+function addCustomFilament() {
+    // 1. Grab the elements
+    const brandEl = document.getElementById('newBrand');
+    const typeEl = document.getElementById('newType');
+    const colourEl = document.getElementById('newColour');
+    const priceEl = document.getElementById('newPrice');
+    const pickerEl = document.getElementById('newColourPicker');
+
+    // 2. Validate values
+    const brand = brandEl.value.trim();
+    const type = typeEl.value.trim();
+    const colour = colourEl.value.trim();
+    const hex = pickerEl.value;
+    const priceKg = priceEl.value || 20; // Default to £20 if blank
+
+    if(!brand || !type || !colour) {
         alert("Please fill in Brand, Type, and Colour.");
         return;
     }
 
     const filamentName = `${brand} ${type} ${colour}`;
+    
+    // 3. Update the Pricing Object
+    // Ensure filamentPrices exists before writing to it
+    if (typeof filamentPrices === 'undefined') {
+        window.filamentPrices = JSON.parse(localStorage.getItem('filamentPrices') || "{}");
+    }
+    
     const pricePerGram = parseFloat(priceKg) / 1000;
     filamentPrices[filamentName] = pricePerGram;
     localStorage.setItem('filamentPrices', JSON.stringify(filamentPrices));
-    if(!filamentsList.includes(filamentName)){
+
+    // 4. Update the Lists
+    if(!filamentsList.includes(filamentName)) {
         filamentsList.push(filamentName);
     }
-
     customFilaments.push(filamentName);
-
     customFilamentColors[colour] = hex;
+    filamentColors[colour] = hex;
 
+    // 5. Save to LocalStorage
     localStorage.setItem('customFilaments', JSON.stringify(customFilaments));
     localStorage.setItem('customFilamentColors', JSON.stringify(customFilamentColors));
 
+    // 6. Reset UI
+    brandEl.value = '';
+    typeEl.value = '';
+    colourEl.value = '';
+    priceEl.value = '';
+
+    // 7. Refresh everything
+    if (typeof updateSearch === 'function') updateSearch();
+    if (typeof renderCustomFilamentList === 'function') renderCustomFilamentList();
+    if (typeof updateDropdowns === 'function') updateDropdowns();
+
+    alert(`Added: ${filamentName} at £${priceKg}/kg`);
+}
     filamentColors[colour] = hex;
 
     document.querySelectorAll('.custom-fil-select').forEach(s => {
