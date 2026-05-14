@@ -208,13 +208,14 @@
         <h2>Inventory Manager</h2>
         <input id="filamentSearchMain" placeholder="Click to add a new physical spool..." onfocus="updateSearch()" oninput="updateSearch()">
         <div id="results-main" class="search-results"></div>
-<div class="custom-filament-box">
+        <div class="custom-filament-box">
     <h2>Add New Filament Type</h2>
+
     <div class="custom-filament-row">
         <input id="newBrand" placeholder="Brand (e.g. Bambu)">
         <input id="newType" placeholder="Type (e.g. PLA)">
         <input id="newColour" placeholder="Colour (e.g. Mist Blue)">
-        <input type="number" id="newPrice" placeholder="£ / kg" step="0.01" style="width: 80px;">
+        
         <input type="color" id="newColourPicker" value="#6fa8dc" style="padding:0;">
     </div>
 
@@ -524,11 +525,7 @@
     }
 
     function exportData() {
-        const data = { 
-        multiSpools: JSON.parse(localStorage.getItem('multiSpools') || "[]"), 
-        customProjects: JSON.parse(localStorage.getItem('customProjects') || "{}"),
-        filamentPrices: JSON.parse(localStorage.getItem('filamentPrices') || "{}") // Add this
-    };
+        const data = { multiSpools: JSON.parse(localStorage.getItem('multiSpools') || "[]"), customProjects: JSON.parse(localStorage.getItem('customProjects') || "{}") };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `filament_backup.json`; a.click();
@@ -566,64 +563,31 @@ customFilaments.forEach(f => {
 /* Merge custom colours into colour system */
 Object.assign(filamentColors, customFilamentColors);
 
-
 function addCustomFilament() {
-    // 1. Grab the elements
-    const brandEl = document.getElementById('newBrand');
-    const typeEl = document.getElementById('newType');
-    const colourEl = document.getElementById('newColour');
-    const priceEl = document.getElementById('newPrice');
-    const pickerEl = document.getElementById('newColourPicker');
 
-    // 2. Validate values
-    const brand = brandEl.value.trim();
-    const type = typeEl.value.trim();
-    const colour = colourEl.value.trim();
-    const hex = pickerEl.value;
-    const priceKg = priceEl.value || 20; // Default to £20 if blank
+    const brand = document.getElementById('newBrand').value.trim();
+    const type = document.getElementById('newType').value.trim();
+    const colour = document.getElementById('newColour').value.trim();
+    const hex = document.getElementById('newColourPicker').value;
 
-    if(!brand || !type || !colour) {
+    if(!brand || !type || !colour){
         alert("Please fill in Brand, Type, and Colour.");
         return;
     }
 
     const filamentName = `${brand} ${type} ${colour}`;
-    
-    // 3. Update the Pricing Object
-    // Ensure filamentPrices exists before writing to it
-    if (typeof filamentPrices === 'undefined') {
-        window.filamentPrices = JSON.parse(localStorage.getItem('filamentPrices') || "{}");
-    }
-    
-    const pricePerGram = parseFloat(priceKg) / 1000;
-    filamentPrices[filamentName] = pricePerGram;
-    localStorage.setItem('filamentPrices', JSON.stringify(filamentPrices));
 
-    // 4. Update the Lists
-    if(!filamentsList.includes(filamentName)) {
+    if(!filamentsList.includes(filamentName)){
         filamentsList.push(filamentName);
     }
-    customFilaments.push(filamentName);
-    customFilamentColors[colour] = hex;
-    filamentColors[colour] = hex;
 
-    // 5. Save to LocalStorage
+    customFilaments.push(filamentName);
+
+    customFilamentColors[colour] = hex;
+
     localStorage.setItem('customFilaments', JSON.stringify(customFilaments));
     localStorage.setItem('customFilamentColors', JSON.stringify(customFilamentColors));
 
-    // 6. Reset UI
-    brandEl.value = '';
-    typeEl.value = '';
-    colourEl.value = '';
-    priceEl.value = '';
-
-    // 7. Refresh everything
-    if (typeof updateSearch === 'function') updateSearch();
-    if (typeof renderCustomFilamentList === 'function') renderCustomFilamentList();
-    if (typeof updateDropdowns === 'function') updateDropdowns();
-
-    alert(`Added: ${filamentName} at £${priceKg}/kg`);
-}
     filamentColors[colour] = hex;
 
     document.querySelectorAll('.custom-fil-select').forEach(s => {
@@ -684,26 +648,6 @@ function renderCustomFilamentList(){
     }).join('');
 }
 
-function getPriceForFilament(name) {
-    const prices = JSON.parse(localStorage.getItem('filamentPrices') || "{}");
-    return prices[name] || 0.02; // Returns custom price or 2p per gram default
-}
-
-// Update inside renderStock()
-// Change: const spoolVal = (s.current * COST_PER_GRAM).toFixed(2);
-// To:
-const priceGram = getPriceForFilament(s.name);
-const spoolVal = (s.current * priceGram).toFixed(2);
-
-// Update inside checkProject()
-// Change the total cost calculation:
-let totalCost = 0;
-reqs.forEach(item => {
-    const priceGram = getPriceForFilament(item.f);
-    totalCost += (item.g * priceGram);
-});
-// Then use totalCost.toFixed(2) in your HTML template
-    
 function deleteCustomFilament(name){
 
     if(!confirm(`Delete ${name}?`)) return;
