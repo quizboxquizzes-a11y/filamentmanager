@@ -215,7 +215,7 @@
         <input id="newBrand" placeholder="Brand (e.g. Bambu)">
         <input id="newType" placeholder="Type (e.g. PLA)">
         <input id="newColour" placeholder="Colour (e.g. Mist Blue)">
-        
+        <input type="number" id="newPrice" placeholder="£ / kg" step="0.01" style="width: 80px;">
         <input type="color" id="newColourPicker" value="#6fa8dc" style="padding:0;">
     </div>
 
@@ -525,7 +525,11 @@
     }
 
     function exportData() {
-        const data = { multiSpools: JSON.parse(localStorage.getItem('multiSpools') || "[]"), customProjects: JSON.parse(localStorage.getItem('customProjects') || "{}") };
+        const data = { 
+        multiSpools: JSON.parse(localStorage.getItem('multiSpools') || "[]"), 
+        customProjects: JSON.parse(localStorage.getItem('customProjects') || "{}"),
+        filamentPrices: JSON.parse(localStorage.getItem('filamentPrices') || "{}") // Add this
+    };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `filament_backup.json`; a.click();
@@ -569,14 +573,16 @@ function addCustomFilament() {
     const type = document.getElementById('newType').value.trim();
     const colour = document.getElementById('newColour').value.trim();
     const hex = document.getElementById('newColourPicker').value;
-
+    const priceKg = document.getElementById('newPrice').value || 20; // Default to 20 if empty
     if(!brand || !type || !colour){
         alert("Please fill in Brand, Type, and Colour.");
         return;
     }
 
     const filamentName = `${brand} ${type} ${colour}`;
-
+    const pricePerGram = parseFloat(priceKg) / 1000;
+    filamentPrices[filamentName] = pricePerGram;
+    localStorage.setItem('filamentPrices', JSON.stringify(filamentPrices));
     if(!filamentsList.includes(filamentName)){
         filamentsList.push(filamentName);
     }
@@ -648,6 +654,26 @@ function renderCustomFilamentList(){
     }).join('');
 }
 
+function getPriceForFilament(name) {
+    const prices = JSON.parse(localStorage.getItem('filamentPrices') || "{}");
+    return prices[name] || 0.02; // Returns custom price or 2p per gram default
+}
+
+// Update inside renderStock()
+// Change: const spoolVal = (s.current * COST_PER_GRAM).toFixed(2);
+// To:
+const priceGram = getPriceForFilament(s.name);
+const spoolVal = (s.current * priceGram).toFixed(2);
+
+// Update inside checkProject()
+// Change the total cost calculation:
+let totalCost = 0;
+reqs.forEach(item => {
+    const priceGram = getPriceForFilament(item.f);
+    totalCost += (item.g * priceGram);
+});
+// Then use totalCost.toFixed(2) in your HTML template
+    
 function deleteCustomFilament(name){
 
     if(!confirm(`Delete ${name}?`)) return;
